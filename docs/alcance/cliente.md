@@ -16,6 +16,8 @@ Que una persona en la CDMX encuentre rápido qué tianguis, mercado o bodega de 
 
 ## Funcionalidades incluidas (MVP)
 
+**Lugares reales en el mapa:** tianguis (1,137), mercados públicos (329) y mercados sobre ruedas (51) de SEDECO, Datos Abiertos CDMX, y la Central de Abasto de OpenStreetMap. Viven como datos estáticos en `frontend/src/routes/publico/mapa/lugares-datos.ts`, generado con `herramientas/limpiar_datos.py` del prototipo (fuera del repo). Los comercios del seed son puestos de demostración y aparecen en la ficha del lugar real más cercano de su categoría. Pendiente en `main`: ajustar `compartido.md`, que todavía dice que las ubicaciones son mock.
+
 **Sin login** (exploración pública, definida en `compartido.md`):
 - **Explorar comercios** en el mapa o en una lista, con filtros por categoría (Central de Abasto, mercado fijo, sobre ruedas, tianguis), por alcaldía y por "abierto hoy".
 - **Ver el detalle de un comercio:** ubicación, días de operación, productos con precio y unidad, y comentarios.

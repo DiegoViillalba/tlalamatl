@@ -62,6 +62,7 @@
 .mapa-alcaldia { stroke: var(--blanco); stroke-width: 3; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
 .mapa-contorno { fill: var(--rosa-borde); stroke: var(--rosa-borde); stroke-width: 14; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
 .mapa-nombre-alc { font-size: 15px; font-weight: 700; fill: #6d5a63; text-anchor: middle; pointer-events: none; paint-order: stroke; stroke: rgba(255,255,255,.8); stroke-width: 3px; }
+.mapa-punto { fill: var(--c); stroke: var(--blanco); cursor: pointer; }
 .mapa-pin { cursor: pointer; }
 .mapa-pin .gota { fill: var(--c); stroke: var(--blanco); stroke-width: 2.5; }
 .mapa-pin .simbolo { fill: var(--blanco); }

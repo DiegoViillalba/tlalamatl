@@ -20,6 +20,8 @@ type Props = {
 
 const ZOOM_MAX = VISTA_TODA.w * 1.4
 const ZOOM_MIN = 120
+/** Por debajo de este ancho de vista (unidades del mapa) los lugares se dibujan como pines y no como puntos. */
+const VISTA_DETALLE = 420
 
 /** Conserva el centro de la vista y ajusta su proporción al lienzo para que no se deforme. */
 function ajustaAspecto(v: Vista, tam: Tam): Vista {
@@ -198,6 +200,25 @@ export function MapaLienzo({ pines, yo, elegido, enfoque, onElegir }: Props) {
           {pinesOrdenados.map((m) => {
             const p = proyecta(m.lat, m.lon)
             const activo = m.id === elegido
+            // De lejos son muchos lugares: puntos de color; al acercar, pines con su forma
+            if (!activo && vista.w > VISTA_DETALLE) {
+              return (
+                <circle
+                  key={m.id}
+                  cx={p.x}
+                  cy={p.y}
+                  r={4.5 * k}
+                  className="mapa-punto"
+                  style={{ '--c': TIPOS[m.tipo].color } as CSSProperties}
+                  strokeWidth={1.2 * k}
+                  onClick={() => {
+                    if (!movidoRef.current) onElegir(m.id)
+                  }}
+                >
+                  <title>{m.nombre}</title>
+                </circle>
+              )
+            }
             const s = k * (activo ? 1.3 : 1)
             return (
               <g

@@ -68,6 +68,7 @@ En el seed, los teléfonos son **ficticios**: tienen la forma `5500xxxxxx`, un r
 - **Layout común:** encabezado con la marca, el nombre del usuario (o "Entrar" si no hay sesión) y "Salir"; contenido con scroll; navegación inferior tipo app.
 - **Simulación de teléfono:** en desktop la app ocupa como máximo 430 px de ancho con marco de teléfono. En móvil o webview ocupa toda la pantalla.
 - **Máquinas de estado validadas en el backend** (`backend/app/estados.py`). Una transición inválida responde 409.
+- **Imágenes de producto:** `<ImagenProducto nombre="Jitomate saladet" className="size-16" />` (`components/imagen-producto.tsx`) muestra una foto ilustrativa o, si no hay (o falla), un ícono sobre fondo neutro. `imagenDeProducto(nombre)` (`lib/imagenes.ts`) empareja por palabras clave sin acentos y devuelve `{ src, credito, licencia, fuente }` o `null`; no confunde chiles distintos. Pon `<CreditosImagenes nombres={...} />` al pie de la pantalla (y `LEYENDA_IMAGENES`, "Imágenes ilustrativas") para mostrar los créditos de las fotos usadas. Las fotos son **ilustrativas**, de Wikimedia Commons con licencias abiertas (CC0, dominio público, CC BY, CC BY-SA), viven en `frontend/public/productos/` (nada se pide a dominios externos) y sus créditos están en `lib/imagenes-productos.ts`. Se regeneran con `python3 scripts/imagenes_productos.py` desde `frontend/` (el script tiene la lista de productos y archivos de Commons).
 
 ### Fletes compartidos (proveedor ↔ comercios)
 

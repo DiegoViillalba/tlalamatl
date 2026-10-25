@@ -1,9 +1,10 @@
 """Endpoints del rol proveedor. Dueña: rama rol/proveedor.
 
-Por implementar (ver docs/alcance/proveedor.md): rutas compartidas de entrega (necesitan `RutaEntrega` en main).
+Rutas compartidas de entrega (fletes): el proveedor agrupa órdenes confirmadas de varios comercios en un
+solo viaje; los comercios piden sumarse (su lado vive en rol/comercio, ver docs/alcance/compartido.md).
 """
 
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -12,11 +13,13 @@ from sqlmodel import Field, SQLModel, col, func, select
 
 from app.auth import require_rol
 from app.db import SessionDep
-from app.estados import validar_orden
+from app.estados import validar_orden, validar_ruta
 from app.models import (
     Categoria,
     Comercio,
     EstadoOrden,
+    EstadoRuta,
+    EstadoSolicitudFlete,
     OfertaProveedor,
     OrdenAbasto,
     OrdenAbastoItem,
@@ -24,6 +27,8 @@ from app.models import (
     OrdenAbastoLeer,
     Proveedor,
     Rol,
+    RutaEntrega,
+    SolicitudFlete,
     Usuario,
     ahora,
 )
@@ -273,3 +278,252 @@ def listar_compradores(usuario: ProveedorActual, session: SessionDep) -> list[Co
         Comprador(comercio=_contacto(comercio), ordenes=total, ultima_orden=ultima)
         for comercio, total, ultima in filas
     ]
+
+
+# --- Rutas compartidas de entrega ----------------------------------------------------
+
+
+class RutaCrear(SQLModel):
+    orden_ids: list[int] = Field(min_length=1)
+    fecha: date
+    costo_flete: float = Field(default=0, ge=0)
+    zona: str | None = Field(default=None, min_length=1)
+    nota: str | None = None
+
+
+class CambioEstadoRuta(SQLModel):
+    estado: EstadoRuta
+
+
+class CambioEstadoSolicitud(SQLModel):
+    estado: EstadoSolicitudFlete
+
+
+class Parada(SQLModel):
+    comercio: ComercioContacto
+    orden_ids: list[int]
+    subtotal: float  # mercancía que recibe este comercio en la ruta
+    cuota_flete: float  # su parte del flete
+
+
+class SolicitudRecibida(SQLModel):
+    id: int
+    estado: EstadoSolicitudFlete
+    creado_en: datetime
+    comercio: ComercioContacto
+    orden_id: int
+    subtotal: float
+    cuota_si_se_suma: float | None  # parte del flete que le tocaría si se acepta (None si ya es parada)
+
+
+class RutaLeer(SQLModel):
+    id: int
+    zona: str
+    fecha: date
+    costo_flete: float
+    nota: str | None
+    estado: EstadoRuta
+    creado_en: datetime
+    comercios: int
+    cuota_flete: float  # costo_flete entre los comercios de la ruta
+    total_mercancia: float
+    paradas: list[Parada]
+    solicitudes: list[SolicitudRecibida]  # solo las pendientes
+
+
+class RutaSugerida(SQLModel):
+    zona: str
+    comercios: int
+    ordenes: list[OrdenRecibida]
+
+
+def _subtotal(orden: OrdenAbasto) -> float:
+    return round(sum(i.cantidad * i.precio_unitario for i in orden.items), 2)
+
+
+def _cuota(costo_flete: float, comercios: int) -> float:
+    return round(costo_flete / comercios, 2) if comercios else 0
+
+
+def _mi_ruta(ruta_id: int, proveedor: Proveedor, session: SessionDep) -> RutaEntrega:
+    ruta = session.get(RutaEntrega, ruta_id)
+    if ruta is None or ruta.proveedor_id != proveedor.id:
+        raise HTTPException(404, "Ruta no encontrada")
+    return ruta
+
+
+def _ruta_leer(ruta: RutaEntrega, session: SessionDep) -> RutaLeer:
+    ordenes = session.exec(select(OrdenAbasto).where(OrdenAbasto.ruta_id == ruta.id).order_by(OrdenAbasto.id)).all()
+    por_comercio: dict[int, list[OrdenAbasto]] = {}
+    for orden in ordenes:
+        por_comercio.setdefault(orden.comercio_id, []).append(orden)
+    cuota = _cuota(ruta.costo_flete, len(por_comercio))
+    paradas = [
+        Parada(
+            comercio=_contacto(session.get(Comercio, comercio_id)),
+            orden_ids=[o.id for o in lista],
+            subtotal=round(sum(_subtotal(o) for o in lista), 2),
+            cuota_flete=cuota,
+        )
+        for comercio_id, lista in por_comercio.items()
+    ]
+    pendientes = session.exec(
+        select(SolicitudFlete)
+        .where(SolicitudFlete.ruta_id == ruta.id, SolicitudFlete.estado == EstadoSolicitudFlete.pendiente)
+        .order_by(SolicitudFlete.id)
+    ).all()
+    solicitudes = [
+        SolicitudRecibida(
+            id=sol.id,
+            estado=sol.estado,
+            creado_en=sol.creado_en,
+            comercio=_contacto(session.get(Comercio, sol.comercio_id)),
+            orden_id=sol.orden_id,
+            subtotal=_subtotal(session.get(OrdenAbasto, sol.orden_id)),
+            cuota_si_se_suma=None
+            if sol.comercio_id in por_comercio
+            else _cuota(ruta.costo_flete, len(por_comercio) + 1),
+        )
+        for sol in pendientes
+    ]
+    return RutaLeer(
+        **ruta.model_dump(exclude={"proveedor_id"}),
+        comercios=len(por_comercio),
+        cuota_flete=cuota,
+        total_mercancia=round(sum(p.subtotal for p in paradas), 2),
+        paradas=paradas,
+        solicitudes=solicitudes,
+    )
+
+
+def _resolver_solicitudes_pendientes(ruta: RutaEntrega, session: SessionDep) -> None:
+    """Al despachar o cancelar la ruta, lo que quedó pendiente se rechaza."""
+    pendientes = session.exec(
+        select(SolicitudFlete).where(
+            SolicitudFlete.ruta_id == ruta.id, SolicitudFlete.estado == EstadoSolicitudFlete.pendiente
+        )
+    ).all()
+    for sol in pendientes:
+        sol.estado = EstadoSolicitudFlete.rechazada
+        session.add(sol)
+
+
+@router.get("/rutas/sugeridas")
+def sugerir_rutas(usuario: ProveedorActual, session: SessionDep) -> list[RutaSugerida]:
+    """Órdenes confirmadas y sin ruta, agrupadas por alcaldía; solo zonas con 2 o más comercios."""
+    proveedor = _mi_proveedor(usuario, session)
+    ordenes = session.exec(
+        select(OrdenAbasto)
+        .where(
+            OrdenAbasto.proveedor_id == proveedor.id,
+            OrdenAbasto.estado == EstadoOrden.confirmada,
+            col(OrdenAbasto.ruta_id).is_(None),
+        )
+        .order_by(OrdenAbasto.creado_en, OrdenAbasto.id)
+    ).all()
+    por_zona: dict[str, list[OrdenAbasto]] = {}
+    for orden in ordenes:
+        por_zona.setdefault(session.get(Comercio, orden.comercio_id).alcaldia, []).append(orden)
+    sugeridas = []
+    for zona, lista in sorted(por_zona.items()):
+        comercios = {o.comercio_id for o in lista}
+        if len(comercios) >= 2:
+            sugeridas.append(
+                RutaSugerida(zona=zona, comercios=len(comercios), ordenes=[_orden_recibida(o, session) for o in lista])
+            )
+    return sugeridas
+
+
+@router.post("/rutas", status_code=201)
+def crear_ruta(datos: RutaCrear, usuario: ProveedorActual, session: SessionDep) -> RutaLeer:
+    proveedor = _mi_proveedor(usuario, session)
+    ids = set(datos.orden_ids)
+    ordenes = [_mi_orden(orden_id, proveedor, session) for orden_id in sorted(ids)]
+    for orden in ordenes:
+        if orden.estado != EstadoOrden.confirmada:
+            raise HTTPException(409, f"La orden {orden.id} no está confirmada")
+        if orden.ruta_id is not None:
+            raise HTTPException(409, f"La orden {orden.id} ya está en una ruta")
+    if datos.fecha < ahora().date():
+        raise HTTPException(422, "La fecha de salida no puede ser pasada")
+    zona = datos.zona.strip() if datos.zona else session.get(Comercio, ordenes[0].comercio_id).alcaldia
+    ruta = RutaEntrega(
+        proveedor_id=proveedor.id, zona=zona, fecha=datos.fecha, costo_flete=datos.costo_flete, nota=datos.nota
+    )
+    session.add(ruta)
+    session.flush()
+    for orden in ordenes:
+        orden.ruta_id = ruta.id
+        session.add(orden)
+    session.commit()
+    session.refresh(ruta)
+    return _ruta_leer(ruta, session)
+
+
+@router.get("/rutas")
+def listar_rutas(
+    usuario: ProveedorActual, session: SessionDep, estado: Annotated[EstadoRuta | None, Query()] = None
+) -> list[RutaLeer]:
+    proveedor = _mi_proveedor(usuario, session)
+    consulta = select(RutaEntrega).where(RutaEntrega.proveedor_id == proveedor.id)
+    if estado is not None:
+        consulta = consulta.where(RutaEntrega.estado == estado)
+    rutas = session.exec(consulta.order_by(col(RutaEntrega.fecha).desc(), col(RutaEntrega.id).desc())).all()
+    return [_ruta_leer(r, session) for r in rutas]
+
+
+@router.post("/rutas/{ruta_id}/estado")
+def avanzar_ruta(
+    ruta_id: int, cambio: CambioEstadoRuta, usuario: ProveedorActual, session: SessionDep
+) -> RutaLeer:
+    ruta = _mi_ruta(ruta_id, _mi_proveedor(usuario, session), session)
+    validar_ruta(ruta.estado, cambio.estado)
+    ordenes = session.exec(select(OrdenAbasto).where(OrdenAbasto.ruta_id == ruta.id)).all()
+    if cambio.estado == EstadoRuta.en_camino:
+        if not ordenes:
+            raise HTTPException(409, "La ruta no tiene órdenes")
+        for orden in ordenes:
+            if orden.estado == EstadoOrden.confirmada:
+                validar_orden(orden.estado, EstadoOrden.enviada)
+                orden.estado = EstadoOrden.enviada
+                session.add(orden)
+        _resolver_solicitudes_pendientes(ruta, session)
+    elif cambio.estado == EstadoRuta.cancelada:
+        for orden in ordenes:
+            orden.ruta_id = None
+            session.add(orden)
+        _resolver_solicitudes_pendientes(ruta, session)
+    ruta.estado = cambio.estado
+    session.add(ruta)
+    session.commit()
+    session.refresh(ruta)
+    return _ruta_leer(ruta, session)
+
+
+@router.post("/rutas/solicitudes/{solicitud_id}/estado")
+def responder_solicitud_flete(
+    solicitud_id: int, cambio: CambioEstadoSolicitud, usuario: ProveedorActual, session: SessionDep
+) -> RutaLeer:
+    """Acepta o rechaza la solicitud de un comercio para sumarse a una de mis rutas."""
+    proveedor = _mi_proveedor(usuario, session)
+    solicitud = session.get(SolicitudFlete, solicitud_id)
+    if solicitud is None:
+        raise HTTPException(404, "Solicitud no encontrada")
+    ruta = _mi_ruta(solicitud.ruta_id, proveedor, session)
+    if solicitud.estado != EstadoSolicitudFlete.pendiente:
+        raise HTTPException(409, "La solicitud ya fue atendida")
+    if cambio.estado == EstadoSolicitudFlete.pendiente:
+        raise HTTPException(409, "Una solicitud solo puede pasar a 'aceptada' o 'rechazada'")
+    if cambio.estado == EstadoSolicitudFlete.aceptada:
+        orden = session.get(OrdenAbasto, solicitud.orden_id)
+        if ruta.estado != EstadoRuta.abierta:
+            raise HTTPException(409, "La ruta ya no está abierta")
+        if orden.estado != EstadoOrden.confirmada or orden.ruta_id is not None:
+            raise HTTPException(409, "La orden ya no puede sumarse a la ruta")
+        orden.ruta_id = ruta.id
+        session.add(orden)
+    solicitud.estado = cambio.estado
+    session.add(solicitud)
+    session.commit()
+    session.refresh(ruta)
+    return _ruta_leer(ruta, session)

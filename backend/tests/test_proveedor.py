@@ -1,8 +1,10 @@
 """Tests del rol proveedor. Dueña: rama rol/proveedor."""
 
+from datetime import timedelta
+
 from sqlmodel import select
 
-from app.models import EstadoOrden, OrdenAbasto, Rol
+from app.models import Comercio, EstadoOrden, EstadoSolicitudFlete, OrdenAbasto, Rol, SolicitudFlete, ahora
 
 # Proveedores sembrados (n del login): 0 Hortícola del Valle, 1 San Juan, 2 Xochimilco, 3 Uruapan.
 VALLE, SAN_JUAN, XOCHIMILCO, URUAPAN = 0, 1, 2, 3
@@ -149,8 +151,8 @@ def _ordenes(client, h, estado=None):
 def test_listar_ordenes_con_contacto_del_comercio(client, login):
     ordenes = _ordenes(client, login(Rol.proveedor, SAN_JUAN))
     assert {o["estado"] for o in ordenes} == {"confirmada", "rechazada"}
-    orden = next(o for o in ordenes if o["estado"] == "confirmada")
-    assert orden["comercio"]["nombre"]
+    orden = next(o for o in ordenes if o["comercio"]["nombre"] == "Abarrotes y Semillas La Ceiba")
+    assert orden["estado"] == "confirmada"
     assert orden["comercio"]["telefono"]
     assert orden["items"][0]["producto"] == "Frijol negro"
     assert orden["items"][0]["unidad"] == "kg"
@@ -221,9 +223,10 @@ def test_orden_ajena_responde_404(client, login, session):
 def test_compradores_son_comercios_con_ordenes_no_rechazadas(client, login):
     r = client.get("/proveedor/compradores", headers=login(Rol.proveedor, SAN_JUAN))
     assert r.status_code == 200
-    # San Juan tiene una orden confirmada (La Ceiba) y una rechazada (Rosita): solo cuenta la primera.
+    # San Juan tiene dos órdenes confirmadas (Mary y La Ceiba) y una rechazada (Rosita): esta no cuenta.
     compradores = r.json()
-    assert len(compradores) == 1
+    assert len(compradores) == 2
+    assert {c["comercio"]["nombre"] for c in compradores} == {"Verduras Doña Mary", "Abarrotes y Semillas La Ceiba"}
     assert compradores[0]["ordenes"] == 1
     assert compradores[0]["comercio"]["telefono"]
     assert compradores[0]["ultima_orden"]
@@ -252,3 +255,212 @@ def test_compradores_agrupa_por_comercio(client, login, session):
 
 def _id_proveedor(client, h) -> int:
     return client.get("/proveedor/mi-perfil", headers=h).json()["id"]
+
+
+# --- Rutas compartidas de entrega ----------------------------------------------------
+
+MAÑANA = lambda: (ahora().date() + timedelta(days=1)).isoformat()  # noqa: E731
+
+
+def _orden_de(client, h, comercio: str) -> dict:
+    return next(o for o in _ordenes(client, h) if o["comercio"]["nombre"] == comercio)
+
+
+def _ordenes_iztapalapa(client, h) -> list[int]:
+    """Ids de las órdenes confirmadas de La Ceiba y Mary (ambas en Iztapalapa)."""
+    return [_orden_de(client, h, n)["id"] for n in ("Abarrotes y Semillas La Ceiba", "Verduras Doña Mary")]
+
+
+def _crear_ruta(client, h, ids, costo=300, **extra):
+    return client.post(
+        "/proveedor/rutas", json={"orden_ids": ids, "fecha": MAÑANA(), "costo_flete": costo, **extra}, headers=h
+    )
+
+
+def test_rutas_exigen_rol_proveedor(client, login):
+    for rol in (Rol.cliente, Rol.comerciante):
+        h = login(rol)
+        assert client.get("/proveedor/rutas", headers=h).status_code == 403
+        assert client.get("/proveedor/rutas/sugeridas", headers=h).status_code == 403
+        assert client.post("/proveedor/rutas", json={}, headers=h).status_code == 403
+
+
+def test_rutas_sugeridas_agrupa_por_alcaldia(client, login):
+    sugeridas = client.get("/proveedor/rutas/sugeridas", headers=login(Rol.proveedor, SAN_JUAN)).json()
+    assert len(sugeridas) == 1
+    assert sugeridas[0]["zona"] == "Iztapalapa"
+    assert sugeridas[0]["comercios"] == 2
+    assert {o["estado"] for o in sugeridas[0]["ordenes"]} == {"confirmada"}
+    # Un proveedor sin órdenes confirmadas no tiene sugerencias.
+    assert client.get("/proveedor/rutas/sugeridas", headers=login(Rol.proveedor, XOCHIMILCO)).json() == []
+
+
+def test_crear_ruta_reparte_el_flete_por_comercio(client, login):
+    h = login(Rol.proveedor, SAN_JUAN)
+    ids = _ordenes_iztapalapa(client, h)
+    r = _crear_ruta(client, h, ids, costo=300, nota="Salgo a las 7")
+    assert r.status_code == 201
+    ruta = r.json()
+    assert ruta["estado"] == "abierta"
+    assert ruta["zona"] == "Iztapalapa"
+    assert ruta["comercios"] == 2
+    assert ruta["cuota_flete"] == 150
+    assert [p["cuota_flete"] for p in ruta["paradas"]] == [150, 150]
+    assert all(p["comercio"]["telefono"] for p in ruta["paradas"])
+    assert ruta["total_mercancia"] == sum(p["subtotal"] for p in ruta["paradas"]) > 0
+    # Las órdenes ya no se sugieren y quedan ligadas a la ruta.
+    assert client.get("/proveedor/rutas/sugeridas", headers=h).json() == []
+    assert {o["ruta_id"] for o in _ordenes(client, h, "confirmada")} == {ruta["id"]}
+    assert [x["id"] for x in client.get("/proveedor/rutas", headers=h).json()] == [ruta["id"]]
+
+
+def test_cuota_redondea_a_centavos(client, login):
+    h = login(Rol.proveedor, SAN_JUAN)
+    ruta = _crear_ruta(client, h, _ordenes_iztapalapa(client, h), costo=100.01).json()
+    assert ruta["cuota_flete"] == 50.01  # 100.01 / 2 = 50.005
+
+
+def test_crear_ruta_con_una_orden_queda_abierta(client, login):
+    h = login(Rol.proveedor, SAN_JUAN)
+    ruta = _crear_ruta(client, h, [_ordenes_iztapalapa(client, h)[0]], costo=200).json()
+    assert ruta["comercios"] == 1
+    assert ruta["cuota_flete"] == 200
+
+
+def test_crear_ruta_valida(client, login):
+    h = login(Rol.proveedor, SAN_JUAN)
+    ceiba, mary = _ordenes_iztapalapa(client, h)
+    # Orden rechazada: no se puede enviar.
+    rechazada = _ordenes(client, h, "rechazada")[0]["id"]
+    assert _crear_ruta(client, h, [ceiba, rechazada]).status_code == 409
+    # Orden de otro proveedor.
+    ajena = _ordenes(client, login(Rol.proveedor, XOCHIMILCO))[0]["id"]
+    assert _crear_ruta(client, h, [ceiba, ajena]).status_code == 404
+    # Fecha pasada y lista vacía.
+    ayer = (ahora().date() - timedelta(days=1)).isoformat()
+    assert client.post("/proveedor/rutas", json={"orden_ids": [ceiba], "fecha": ayer}, headers=h).status_code == 422
+    assert client.post("/proveedor/rutas", json={"orden_ids": [], "fecha": MAÑANA()}, headers=h).status_code == 422
+    assert _crear_ruta(client, h, [ceiba], costo=-1).status_code == 422
+    # Nada de lo anterior dejó órdenes ligadas.
+    assert client.get("/proveedor/rutas", headers=h).json() == []
+    # Una orden que ya está en una ruta no entra a otra.
+    assert _crear_ruta(client, h, [ceiba, mary]).status_code == 201
+    assert _crear_ruta(client, h, [ceiba]).status_code == 409
+
+
+def test_despachar_y_completar_ruta(client, login):
+    h = login(Rol.proveedor, SAN_JUAN)
+    ruta = _crear_ruta(client, h, _ordenes_iztapalapa(client, h)).json()
+    r = client.post(f"/proveedor/rutas/{ruta['id']}/estado", json={"estado": "en_camino"}, headers=h)
+    assert r.status_code == 200
+    assert r.json()["estado"] == "en_camino"
+    assert {o["estado"] for o in _ordenes(client, h) if o["ruta_id"] == ruta["id"]} == {"enviada"}
+    r = client.post(f"/proveedor/rutas/{ruta['id']}/estado", json={"estado": "completada"}, headers=h)
+    assert r.json()["estado"] == "completada"
+    # Ya no hay a dónde avanzar.
+    assert client.post(f"/proveedor/rutas/{ruta['id']}/estado", json={"estado": "en_camino"}, headers=h).status_code == 409
+
+
+def test_estado_de_ruta_invalido_responde_409(client, login):
+    h = login(Rol.proveedor, SAN_JUAN)
+    ruta = _crear_ruta(client, h, _ordenes_iztapalapa(client, h)).json()
+    assert client.post(f"/proveedor/rutas/{ruta['id']}/estado", json={"estado": "completada"}, headers=h).status_code == 409
+
+
+def test_cancelar_ruta_libera_las_ordenes(client, login, session):
+    h = login(Rol.proveedor, SAN_JUAN)
+    ceiba, mary = _ordenes_iztapalapa(client, h)
+    ruta = _crear_ruta(client, h, [ceiba]).json()
+    sol = SolicitudFlete(ruta_id=ruta["id"], comercio_id=_orden_de(client, h, "Verduras Doña Mary")["comercio_id"], orden_id=mary)
+    session.add(sol)
+    session.commit()
+    r = client.post(f"/proveedor/rutas/{ruta['id']}/estado", json={"estado": "cancelada"}, headers=h)
+    assert r.status_code == 200
+    assert r.json()["estado"] == "cancelada"
+    assert r.json()["paradas"] == []
+    assert {o["ruta_id"] for o in _ordenes(client, h, "confirmada")} == {None}
+    session.refresh(sol)
+    assert sol.estado == EstadoSolicitudFlete.rechazada
+    assert len(client.get("/proveedor/rutas/sugeridas", headers=h).json()) == 1
+
+
+def _ruta_con_solicitud(client, h, session, costo=300):
+    """Ruta con La Ceiba y una solicitud pendiente de Mary para sumarse."""
+    ceiba, mary = _ordenes_iztapalapa(client, h)
+    ruta = _crear_ruta(client, h, [ceiba], costo=costo).json()
+    comercio_mary = _orden_de(client, h, "Verduras Doña Mary")["comercio_id"]
+    sol = SolicitudFlete(ruta_id=ruta["id"], comercio_id=comercio_mary, orden_id=mary)
+    session.add(sol)
+    session.commit()
+    session.refresh(sol)
+    return ruta, sol, mary
+
+
+def test_ruta_muestra_solicitudes_pendientes_con_la_cuota_que_les_tocaria(client, login, session):
+    h = login(Rol.proveedor, SAN_JUAN)
+    ruta, sol, mary = _ruta_con_solicitud(client, h, session, costo=300)
+    leida = client.get("/proveedor/rutas", headers=h).json()[0]
+    assert leida["cuota_flete"] == 300
+    [pedida] = leida["solicitudes"]
+    assert pedida["id"] == sol.id
+    assert pedida["orden_id"] == mary
+    assert pedida["comercio"]["nombre"] == "Verduras Doña Mary"
+    assert pedida["cuota_si_se_suma"] == 150
+
+
+def test_aceptar_solicitud_suma_la_orden_y_reparte_el_flete(client, login, session):
+    h = login(Rol.proveedor, SAN_JUAN)
+    ruta, sol, mary = _ruta_con_solicitud(client, h, session, costo=300)
+    r = client.post(f"/proveedor/rutas/solicitudes/{sol.id}/estado", json={"estado": "aceptada"}, headers=h)
+    assert r.status_code == 200
+    asignada = r.json()
+    assert asignada["comercios"] == 2
+    assert [p["cuota_flete"] for p in asignada["paradas"]] == [150, 150]
+    assert asignada["solicitudes"] == []
+    assert session.get(OrdenAbasto, mary).ruta_id == ruta["id"]
+    # Ya fue atendida.
+    assert client.post(f"/proveedor/rutas/solicitudes/{sol.id}/estado", json={"estado": "rechazada"}, headers=h).status_code == 409
+
+
+def test_rechazar_solicitud_deja_la_orden_libre(client, login, session):
+    h = login(Rol.proveedor, SAN_JUAN)
+    ruta, sol, mary = _ruta_con_solicitud(client, h, session)
+    r = client.post(f"/proveedor/rutas/solicitudes/{sol.id}/estado", json={"estado": "rechazada"}, headers=h)
+    assert r.status_code == 200
+    assert r.json()["comercios"] == 1
+    assert session.get(OrdenAbasto, mary).ruta_id is None
+    session.refresh(sol)
+    assert sol.estado == EstadoSolicitudFlete.rechazada
+
+
+def test_solicitud_no_puede_volver_a_pendiente(client, login, session):
+    h = login(Rol.proveedor, SAN_JUAN)
+    _, sol, _ = _ruta_con_solicitud(client, h, session)
+    r = client.post(f"/proveedor/rutas/solicitudes/{sol.id}/estado", json={"estado": "pendiente"}, headers=h)
+    assert r.status_code == 409
+
+
+def test_no_se_acepta_en_una_ruta_que_ya_salio(client, login, session):
+    h = login(Rol.proveedor, SAN_JUAN)
+    ruta, _, mary = _ruta_con_solicitud(client, h, session)
+    client.post(f"/proveedor/rutas/{ruta['id']}/estado", json={"estado": "en_camino"}, headers=h)
+    # Despachar rechaza lo pendiente; una solicitud tardía que se cuele tampoco se puede aceptar.
+    tardia = SolicitudFlete(ruta_id=ruta["id"], comercio_id=1, orden_id=mary)
+    session.add(tardia)
+    session.commit()
+    r = client.post(f"/proveedor/rutas/solicitudes/{tardia.id}/estado", json={"estado": "aceptada"}, headers=h)
+    assert r.status_code == 409
+    assert session.get(OrdenAbasto, mary).ruta_id is None
+
+
+def test_rutas_ajenas_responden_404(client, login, session):
+    h = login(Rol.proveedor, SAN_JUAN)
+    ruta, sol, _ = _ruta_con_solicitud(client, h, session)
+    otro = login(Rol.proveedor, VALLE)
+    assert client.get("/proveedor/rutas", headers=otro).json() == []
+    assert client.post(f"/proveedor/rutas/{ruta['id']}/estado", json={"estado": "cancelada"}, headers=otro).status_code == 404
+    assert client.post(f"/proveedor/rutas/solicitudes/{sol.id}/estado", json={"estado": "aceptada"}, headers=otro).status_code == 404
+    assert client.post("/proveedor/rutas/99999/estado", json={"estado": "cancelada"}, headers=otro).status_code == 404
+    assert client.post("/proveedor/rutas/solicitudes/99999/estado", json={"estado": "aceptada"}, headers=otro).status_code == 404
+    # Y no puede meter en su ruta las órdenes de otro proveedor.
+    assert _crear_ruta(client, otro, [_orden_de(client, h, "Abarrotes y Semillas La Ceiba")["id"]]).status_code == 404

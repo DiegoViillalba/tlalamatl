@@ -1,0 +1,121 @@
+/* Estilos del mapa público. Portados de m1.html y acotados a .mapa-raiz para no tocar el tema de la app. */
+.mapa-raiz {
+  --guinda: #9f2241;
+  --guinda-osc: #771a31;
+  --rosa: #f598c6;
+  --rosa-borde: #dc6fc0;
+  --rosa-claro: #fde3ef;
+  --tinta: #231f20;
+  --tenue: #5f5a5c;
+  --linea: #e7e1e3;
+  --blanco: #ffffff;
+  --foco: #1f6fd1;
+  --c-ca: #e8203a;
+  --c-mp: #3f8a46;
+  --c-tq: #1f6fd1;
+  --c-mr: #e2780c;
+  --radio: 14px;
+  --radio-chico: 10px;
+
+  color: var(--tinta);
+  font-variant-numeric: tabular-nums;
+}
+.mapa-raiz button,
+.mapa-raiz input { font: inherit; color: inherit; }
+.mapa-raiz :focus-visible { outline: 3px solid var(--foco); outline-offset: 2px; }
+.mapa-raiz .ico { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.mapa-raiz .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* Banda de búsqueda */
+.mapa-banda { background: var(--rosa); padding: 16px; border-radius: var(--radio); margin-bottom: 12px; }
+.mapa-banda h2 { margin: 0 0 12px; font-size: 19px; line-height: 1.2; font-weight: 800; color: var(--blanco); }
+.mapa-buscar {
+  display: flex; align-items: center; gap: 10px; background: var(--blanco); border-radius: var(--radio);
+  padding: 0 6px 0 12px; min-height: 48px; color: var(--tenue);
+}
+.mapa-buscar input { border: 0; outline: 0; flex: 1; min-width: 0; height: 46px; background: transparent; color: var(--tinta); }
+.mapa-buscar:focus-within { outline: 3px solid var(--foco); outline-offset: 2px; }
+.mapa-ubicar {
+  border: 0; background: var(--guinda); color: var(--blanco); border-radius: var(--radio-chico);
+  width: 36px; height: 36px; display: grid; place-items: center; cursor: pointer; flex: none;
+}
+
+/* Filtros: tipos de mercado y "abierto hoy" */
+.mapa-filtros { display: flex; gap: 8px; margin-top: 12px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+.mapa-filtros::-webkit-scrollbar { display: none; }
+.mapa-chip {
+  --c: var(--tinta);
+  display: inline-flex; align-items: center; gap: 8px; flex: none; cursor: pointer;
+  border: 2px solid var(--blanco); background: var(--blanco); color: var(--tinta);
+  border-radius: var(--radio); padding: 8px 14px 8px 10px; min-height: 44px; font-weight: 600; font-size: 14px;
+}
+.mapa-chip .forma { width: 14px; height: 14px; }
+.mapa-chip[aria-pressed="true"] { background: var(--c); border-color: var(--c); color: var(--blanco); }
+.mapa-chip[aria-pressed="true"] .forma { fill: var(--blanco); }
+.mapa-chip[aria-pressed="false"] .forma { fill: var(--c); }
+.mapa-chip .n { font-weight: 500; opacity: .9; }
+
+/* Lienzo */
+.mapa-caja { position: relative; height: min(56vh, 120vw); min-height: 320px; background: var(--blanco); overflow: hidden; border-radius: var(--radio); border: 1px solid var(--linea); }
+.mapa-svg { width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
+.mapa-svg.arrastrando { cursor: grabbing; }
+.mapa-alcaldia { stroke: var(--blanco); stroke-width: 3; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.mapa-contorno { fill: var(--rosa-borde); stroke: var(--rosa-borde); stroke-width: 14; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.mapa-nombre-alc { font-size: 15px; font-weight: 700; fill: #6d5a63; text-anchor: middle; pointer-events: none; paint-order: stroke; stroke: rgba(255,255,255,.8); stroke-width: 3px; }
+.mapa-pin { cursor: pointer; }
+.mapa-pin .gota { fill: var(--c); stroke: var(--blanco); stroke-width: 2.5; }
+.mapa-pin .simbolo { fill: var(--blanco); }
+.mapa-pin.activo .gota { stroke: var(--tinta); stroke-width: 3; }
+.mapa-pin:focus-visible { outline: none; }
+.mapa-pin:focus-visible .gota { stroke: var(--foco); stroke-width: 4; }
+.mapa-yo-punto { fill: var(--foco); stroke: var(--blanco); stroke-width: 3; }
+.mapa-yo-halo { fill: none; stroke: var(--foco); stroke-width: 2; }
+
+.mapa-zoom { position: absolute; right: 12px; bottom: 12px; display: flex; flex-direction: column; gap: 6px; }
+.mapa-zoom button {
+  width: 44px; height: 44px; border-radius: var(--radio-chico); border: 1px solid var(--linea);
+  background: var(--blanco); color: var(--guinda); display: grid; place-items: center; cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,.15);
+}
+.mapa-simbologia {
+  position: absolute; left: 12px; bottom: 12px; background: rgba(255,255,255,.94); border-radius: var(--radio-chico);
+  padding: 8px 10px; font-size: 12px; border: 1px solid var(--linea);
+}
+.mapa-simbologia b { display: block; font-size: 12px; margin-bottom: 4px; }
+.mapa-simbologia ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; }
+.mapa-simbologia li { display: flex; align-items: center; gap: 6px; }
+.mapa-simbologia svg { width: 12px; height: 12px; }
+
+/* Resumen, ficha y lista */
+.mapa-resumen { background: var(--rosa-claro); border-radius: var(--radio); padding: 14px 16px; margin: 14px 0; }
+.mapa-resumen strong { display: block; font-size: 15px; font-weight: 700; color: var(--guinda-osc); }
+.mapa-resumen span { font-size: 13px; color: var(--tenue); }
+.mapa-ficha { border-radius: var(--radio); background: var(--blanco); border: 1px solid var(--linea); padding: 16px; margin-bottom: 14px; }
+.mapa-ficha .etiqueta { display: inline-block; font-size: 12px; font-weight: 700; color: var(--blanco); background: var(--c); border-radius: 8px; padding: 3px 10px; }
+.mapa-ficha h3 { margin: 10px 0 4px; font-size: 19px; font-weight: 800; line-height: 1.2; }
+.mapa-ficha dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; margin: 10px 0 14px; font-size: 14px; }
+.mapa-ficha dt { color: var(--tenue); }
+.mapa-ficha dd { margin: 0; font-weight: 600; }
+.mapa-acciones { display: flex; gap: 8px; flex-wrap: wrap; }
+.mapa-accion {
+  display: inline-flex; align-items: center; gap: 8px; text-decoration: none; cursor: pointer;
+  border-radius: var(--radio-chico); padding: 10px 14px; min-height: 44px; font-weight: 700; font-size: 14px;
+  border: 2px solid var(--guinda); color: var(--guinda); background: var(--blanco);
+}
+.mapa-accion.principal { background: var(--guinda); color: var(--blanco); }
+.mapa-cerrar { float: right; border: 0; background: transparent; color: var(--tenue); width: 44px; height: 44px; margin: -10px -10px 0 0; display: grid; place-items: center; cursor: pointer; }
+.mapa-lista { list-style: none; margin: 0; padding: 0; }
+.mapa-item {
+  display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; width: 100%;
+  text-align: left; background: var(--blanco); border: 1px solid var(--linea); border-radius: var(--radio);
+  padding: 12px 14px; margin-bottom: 8px; cursor: pointer; min-height: 64px;
+}
+.mapa-item:hover { border-color: var(--rosa); }
+.mapa-item[aria-current="true"] { border-color: var(--guinda); box-shadow: inset 0 0 0 1px var(--guinda); }
+.mapa-item .icono-tipo { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; background: var(--c); }
+.mapa-item .icono-tipo svg { width: 16px; height: 16px; fill: var(--blanco); }
+.mapa-item .nombre { font-weight: 700; font-size: 15px; line-height: 1.25; }
+.mapa-item .meta { font-size: 13px; color: var(--tenue); }
+.mapa-item .km { font-weight: 700; color: var(--guinda); font-size: 15px; white-space: nowrap; }
+.mapa-vacio { color: var(--tenue); padding: 12px 0; }
+.mapa-pie { font-size: 12px; color: var(--tenue); margin: 12px 0 0; }

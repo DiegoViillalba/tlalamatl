@@ -6,7 +6,7 @@ import { TINTES, VISTA_TODA, nombreCorto, proyecta } from './geometria'
 import { FormaTipo, FormaTipoAnidada, TIPOS, type Tipo } from './tipos'
 
 export type PinMapa = { id: string; tipo: Tipo; nombre: string; lat: number; lon: number }
-type Vista = { x: number; y: number; w: number; h: number }
+export type Vista = { x: number; y: number; w: number; h: number }
 type Tam = { w: number; h: number }
 
 type Props = {
@@ -15,6 +15,8 @@ type Props = {
   elegido: string | null
   /** Cambia `seq` para centrar el mapa en un pin (por ejemplo, al tocar la lista). */
   enfoque: { id: string; lat: number; lon: number; seq: number } | null
+  /** Cambia `seq` para establecer un viewport arbitrario (por ejemplo, al obtener la ubicación). */
+  encuadre?: { vista: Vista; seq: number } | null
   onElegir: (id: string) => void
 }
 
@@ -35,7 +37,7 @@ function ajustaAspecto(v: Vista, tam: Tam): Vista {
   return { x: cx - w / 2, y: cy - h / 2, w, h }
 }
 
-export function MapaLienzo({ pines, yo, elegido, enfoque, onElegir }: Props) {
+export function MapaLienzo({ pines, yo, elegido, enfoque, encuadre, onElegir }: Props) {
   const svgRef = useRef<SVGSVGElement>(null)
   const [vista, setVista] = useState<Vista>(VISTA_TODA)
   const [tam, setTam] = useState<Tam>({ w: 1, h: 1 })
@@ -92,6 +94,14 @@ export function MapaLienzo({ pines, yo, elegido, enfoque, onElegir }: Props) {
     // Solo cuando cambia la señal de enfoque, no con cada cambio de vista
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enfoque?.seq])
+
+  // Aplicar un viewport externo (por ejemplo, para encuadrar yo + lugar más cercano)
+  useEffect(() => {
+    if (!encuadre) return
+    aplica(encuadre.vista)
+    // Solo cuando cambia la señal de encuadre
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [encuadre?.seq])
 
   // La rueda necesita listener nativo no pasivo para poder cancelar el desplazamiento de la página
   useEffect(() => {

@@ -2,9 +2,9 @@
 // del backend son puestos de demostración que aparecen dentro de la ficha del lugar real más cercano.
 // Portado de m1.html. Ver docs/alcance/compartido.md, "Mapa de bienvenida".
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { LocateFixed, MapPin, MessageCircle, Phone, Send, X } from 'lucide-react'
+import { LayoutGrid, LocateFixed, MapPin, MessageCircle, Phone, Send, X } from 'lucide-react'
 import { useEffect, useMemo, useState, type CSSProperties, type FormEvent } from 'react'
-import { useNavigate, useSearchParams } from 'react-router'
+import { Link, useNavigate, useSearchParams } from 'react-router'
 import {
   clienteComentarMutation,
   clienteMisComentariosQueryKey,
@@ -22,6 +22,7 @@ import { mensajeError } from '@/lib/api'
 import { useSesion } from '@/lib/sesion'
 import { toast } from 'sonner'
 import { BotonFavorito } from '@/routes/cliente/boton-favorito'
+import { planosQuery } from '../croquis/planos'
 import { distanciaKm, fmtKm, proyecta, sinAcentos, ZOCALO } from './geometria'
 import { cargarLugares, diaHoy, FUENTE, type Lugar } from './lugares'
 import { MapaLienzo, type PinMapa, type Vista } from './mapa-lienzo'
@@ -65,6 +66,11 @@ function puestosPorLugar(lugares: Lugar[], comercios: ComercioPublico[]) {
 export function MapaMercados() {
   const lugares = useQuery({ queryKey: ['lugares-cdmx'], queryFn: cargarLugares, staleTime: Infinity })
   const comercios = useQuery(publicoListarComerciosOptions())
+  // Los planos son chicos: se piden de una vez para que "Ver croquis" ya esté al abrir una ficha
+  const queryClient = useQueryClient()
+  useEffect(() => {
+    void queryClient.prefetchQuery(planosQuery)
+  }, [queryClient])
 
   const [tipos, setTipos] = useState<Set<Tipo>>(() => new Set(ORDEN_TIPOS))
   // Abre con "abierto hoy" activo: es la pregunta principal del cliente y quita ruido al mapa
@@ -319,6 +325,9 @@ export function MapaMercados() {
 
 function FichaLugar({ lugar, puestos, onCerrar }: { lugar: Visible; puestos: ComercioPublico[]; onCerrar: () => void }) {
   const ruta = `https://www.google.com/maps/dir/?api=1&destination=${lugar.lat},${lugar.lng}`
+  // Solo unos mercados tienen croquis; los planos se cargan aparte y el botón aparece cuando llegan
+  const planos = useQuery(planosQuery)
+  const conCroquis = Boolean(planos.data?.[lugar.id])
 
   return (
     <article className="mapa-ficha" style={{ '--c': TIPOS[lugar.tipo].color } as CSSProperties} aria-live="polite">
@@ -384,6 +393,12 @@ function FichaLugar({ lugar, puestos, onCerrar }: { lugar: Visible; puestos: Com
           <MapPin className="size-4" />
           Cómo llegar
         </a>
+        {conCroquis && (
+          <Link className="mapa-accion" to={`/croquis/${lugar.id}`}>
+            <LayoutGrid className="size-4" />
+            Ver croquis
+          </Link>
+        )}
       </div>
 
       <h4 className="mb-1 text-sm font-semibold">Puestos en Tlalamatl</h4>

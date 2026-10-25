@@ -1,6 +1,6 @@
 from sqlmodel import select
 
-from app.models import Producto
+from app.models import Producto, Rol
 from tests.conftest import HOY
 
 
@@ -217,3 +217,19 @@ def test_historial_excluye_ofertas_no_disponibles(client):
 def test_historial_producto_inexistente(client):
     assert client.get("/publico/precios/9999/historial").status_code == 404
     assert client.get("/publico/precios/1/historial", params={"semanas": 0}).status_code == 422
+
+
+def test_comentarios_publicos_sin_login(client, login):
+    comercio = client.get("/publico/comercios").json()[0]
+    creado = client.post(
+        f"/cliente/comercios/{comercio['id']}/comentarios",
+        headers=login(Rol.cliente),
+        json={"texto": "Buen lugar"},
+    ).json()
+
+    respuesta = client.get(f"/publico/comercios/{comercio['id']}/comentarios")
+    assert respuesta.status_code == 200
+    comentario = next(item for item in respuesta.json() if item["id"] == creado["id"])
+    assert comentario["texto"] == "Buen lugar"
+    assert comentario["nombre_usuario"]
+    assert client.get("/publico/comercios/9999/comentarios").status_code == 404

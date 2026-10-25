@@ -52,12 +52,12 @@ La navegación inferior del cliente queda así: Mapa (`/`), Favoritos, Mis comen
 | GET | `/publico/precios?temporada&canasta&categoria&mes` | `publicoPrecios` | ✅ hecho (dashboard de precios) |
 | GET | `/publico/canasta?mes` | `publicoCanasta` | ✅ hecho (canasta sugerida) |
 | GET | `/publico/precios/{producto_base_id}/historial?semanas` | `publicoHistorialPrecios` | ✅ hecho (historial) |
-| GET | `/publico/comercios/{id}/comentarios` | `publicoListarComentarios` | ⏳ por crear (ver `compartido.md`) |
-| GET | `/cliente/favoritos` | `clienteListarFavoritos` | ⏳ por crear (la tabla `Favorito` ya existe). |
-| PUT | `/cliente/favoritos/{comercio_id}` | `clienteAgregarFavorito` | ⏳ por crear |
-| DELETE | `/cliente/favoritos/{comercio_id}` | `clienteQuitarFavorito` | ⏳ por crear |
-| POST | `/cliente/comercios/{comercio_id}/comentarios` | `clienteComentar` | ⏳ por crear; cuerpo `{ texto }` (la tabla `Comentario` ya existe). |
-| GET | `/cliente/comentarios` | `clienteMisComentarios` | ⏳ por crear |
+| GET | `/publico/comercios/{id}/comentarios` | `publicoListarComentarios` | ✅ hecho |
+| GET | `/cliente/favoritos` | `clienteListarFavoritos` | ✅ hecho |
+| PUT | `/cliente/favoritos/{comercio_id}` | `clienteAgregarFavorito` | ✅ hecho |
+| DELETE | `/cliente/favoritos/{comercio_id}` | `clienteQuitarFavorito` | ✅ hecho |
+| POST | `/cliente/comercios/{comercio_id}/comentarios` | `clienteComentar` | ✅ hecho |
+| GET | `/cliente/comentarios` | `clienteMisComentarios` | ✅ hecho |
 | GET | `/cliente/pedidos` | `clienteMisPedidos` | Existe en el andamiaje; fuera del MVP |
 
 ## Criterios de aceptación

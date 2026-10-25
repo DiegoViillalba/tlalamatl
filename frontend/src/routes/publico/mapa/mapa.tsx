@@ -1,14 +1,27 @@
 // Mapa público de mercados (sin login). Los lugares son reales (SEDECO, Datos Abiertos CDMX); los comercios
 // del backend son puestos de demostración que aparecen dentro de la ficha del lugar real más cercano.
 // Portado de m1.html. Ver docs/alcance/compartido.md, "Mapa de bienvenida".
-import { useQuery } from '@tanstack/react-query'
-import { LocateFixed, MapPin, X } from 'lucide-react'
-import { useEffect, useMemo, useState, type CSSProperties } from 'react'
-import { publicoListarComerciosOptions, publicoListarProductosOptions } from '@/api/@tanstack/react-query.gen'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { LocateFixed, MapPin, MessageCircle, Phone, Send, X } from 'lucide-react'
+import { useEffect, useMemo, useState, type CSSProperties, type FormEvent } from 'react'
+import { useNavigate, useSearchParams } from 'react-router'
+import {
+  clienteComentarMutation,
+  clienteMisComentariosQueryKey,
+  publicoListarComentariosOptions,
+  publicoListarComentariosQueryKey,
+  publicoListarComerciosOptions,
+  publicoListarProductosOptions,
+} from '@/api/@tanstack/react-query.gen'
 import type { ComercioPublico } from '@/api'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { DIAS, pesos } from '@/lib/formato'
+import { mensajeError } from '@/lib/api'
+import { useSesion } from '@/lib/sesion'
+import { toast } from 'sonner'
+import { BotonFavorito } from '@/routes/cliente/boton-favorito'
 import { distanciaKm, fmtKm, proyecta, sinAcentos, ZOCALO } from './geometria'
 import { cargarLugares, diaHoy, FUENTE, type Lugar } from './lugares'
 import { MapaLienzo, type PinMapa, type Vista } from './mapa-lienzo'
@@ -63,6 +76,7 @@ export function MapaMercados() {
   const [enfoque, setEnfoque] = useState<Enfoque | null>(null)
   const [encuadre, setEncuadre] = useState<Encuadre | null>(null)
   const [mostrar, setMostrar] = useState(POR_PAGINA)
+  const [searchParams] = useSearchParams()
 
   // Pedir ubicación al montar; si el usuario acepta, se activa el zoom al lugar más cercano
   useEffect(() => {
@@ -127,6 +141,16 @@ export function MapaMercados() {
     const l = todos.find((x) => x.id === id)
     if (centrar && l) setEnfoque((prev) => ({ id, lat: l.lat, lon: l.lng, seq: (prev?.seq ?? 0) + 1 }))
   }
+
+  useEffect(() => {
+    const comercioId = Number(searchParams.get('comercio'))
+    if (!Number.isInteger(comercioId) || comercioId <= 0) return
+    const lugarId = [...puestos.entries()].find(([, lista]) => lista.some((p) => p.id === comercioId))?.[0]
+    if (!lugarId) return
+    setElegido(lugarId)
+    const lugar = todos.find((l) => l.id === lugarId)
+    if (lugar) setEnfoque((prev) => ({ id: lugarId, lat: lugar.lat, lon: lugar.lng, seq: (prev?.seq ?? 0) + 1 }))
+  }, [puestos, searchParams, todos])
 
   function usarUbicacion() {
     if (!navigator.geolocation) {
@@ -375,12 +399,56 @@ function FichaLugar({ lugar, puestos, onCerrar }: { lugar: Visible; puestos: Com
 }
 
 function Puesto({ comercio }: { comercio: ComercioPublico }) {
+  const sesion = useSesion()
+  const navegar = useNavigate()
+  const queryClient = useQueryClient()
+  const [texto, setTexto] = useState('')
   const productos = useQuery(publicoListarProductosOptions({ path: { comercio_id: comercio.id } }))
+  const comentarios = useQuery(publicoListarComentariosOptions({ path: { comercio_id: comercio.id } }))
+  const esCliente = sesion?.usuario.rol === 'cliente'
+  const comentar = useMutation({
+    ...clienteComentarMutation(),
+    onSuccess: async () => {
+      setTexto('')
+      await queryClient.invalidateQueries({ queryKey: publicoListarComentariosQueryKey({ path: { comercio_id: comercio.id } }) })
+      await queryClient.invalidateQueries({ queryKey: clienteMisComentariosQueryKey() })
+      toast.success('Comentario publicado')
+    },
+    onError: (error) => toast.error(mensajeError(error)),
+  })
+
+  function enviarComentario(evento: FormEvent<HTMLFormElement>) {
+    evento.preventDefault()
+    if (!esCliente) {
+      navegar('/entrar')
+      return
+    }
+    const limpio = texto.trim()
+    if (limpio) comentar.mutate({ path: { comercio_id: comercio.id }, body: { texto: limpio } })
+  }
+
+  const numero = comercio.whatsapp?.replace(/\D/g, '')
+  const destinoWhatsapp = numero
+    ? numero.length === 12 && numero.startsWith('52') ? numero : `52${numero}`
+    : null
 
   return (
     <section className="mb-3 border-t pt-2">
       <p className="text-sm font-semibold">{comercio.nombre}</p>
       <p className="mb-1 text-xs text-muted-foreground">{comercio.ubicacion}</p>
+      <div className="mb-2 flex flex-wrap gap-2">
+        {comercio.telefono && (
+          <a className="mapa-accion" href={`tel:${comercio.telefono}`}>
+            <Phone className="size-4" /> Llamar
+          </a>
+        )}
+        {destinoWhatsapp && (
+          <a className="mapa-accion" href={`https://wa.me/${destinoWhatsapp}`} target="_blank" rel="noopener noreferrer">
+            <MessageCircle className="size-4" /> WhatsApp
+          </a>
+        )}
+        <BotonFavorito comercioId={comercio.id} />
+      </div>
       {productos.isPending && <Skeleton className="h-10 w-full" />}
       {productos.data && productos.data.length === 0 && <p className="text-sm text-muted-foreground">Sin productos publicados.</p>}
       {productos.data && productos.data.length > 0 && (
@@ -395,6 +463,47 @@ function Puesto({ comercio }: { comercio: ComercioPublico }) {
           ))}
         </ul>
       )}
+        <div className="mt-3 border-t pt-2">
+          <h5 className="mb-2 text-sm font-semibold">Comentarios</h5>
+          {comentarios.isPending && <Skeleton className="h-12 w-full" />}
+          {comentarios.isError && <p className="text-sm text-destructive">No pudimos cargar los comentarios.</p>}
+          {comentarios.data?.length === 0 && <p className="mb-2 text-sm text-muted-foreground">Aún no hay comentarios.</p>}
+          {comentarios.data && comentarios.data.length > 0 && (
+            <ul className="mb-3 space-y-2">
+              {comentarios.data.map((comentario) => (
+                <li key={comentario.id} className="border-l-2 pl-3">
+                  <p className="text-sm">{comentario.texto}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {comentario.nombre_usuario} · {new Intl.DateTimeFormat('es-MX', { dateStyle: 'medium' }).format(new Date(comentario.creado_en))}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
+          {esCliente ? (
+            <form className="space-y-2" onSubmit={enviarComentario}>
+              <label className="sr" htmlFor={`comentario-${comercio.id}`}>Escribe un comentario</label>
+              <textarea
+                id={`comentario-${comercio.id}`}
+                className="min-h-20 w-full resize-y rounded-lg border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+                placeholder="Comparte tu experiencia"
+                maxLength={500}
+                value={texto}
+                onChange={(evento) => setTexto(evento.target.value)}
+              />
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs text-muted-foreground">{texto.length}/500</span>
+                <Button type="submit" size="sm" disabled={!texto.trim() || comentar.isPending}>
+                  <Send /> Comentar
+                </Button>
+              </div>
+            </form>
+          ) : (
+            <Button type="button" size="sm" variant="outline" onClick={() => navegar('/entrar')}>
+              <Send /> Comentar
+            </Button>
+          )}
+        </div>
     </section>
   )
 }

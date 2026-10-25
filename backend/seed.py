@@ -12,10 +12,12 @@ from sqlmodel import Session, SQLModel
 from app.db import engine
 from app.models import (
     Categoria,
+    Comentario,
     Comercio,
     Dia,
     EstadoOrden,
     EstadoPedido,
+    Favorito,
     OfertaProveedor,
     OrdenAbasto,
     OrdenAbastoItem,
@@ -31,6 +33,11 @@ from app.models import (
 
 TODOS_LOS_DIAS = list(Dia)
 DIAS = list(Dia)
+
+
+def telefono_ficticio(n: int) -> str:
+    """Número de 10 dígitos claramente falso: en la CDMX ningún número local empieza con 0 (55 00xx xxxx)."""
+    return f"5500{n:06d}"
 
 
 def dia_relativo(hoy: Dia, desplazamiento: int) -> Dia:
@@ -185,6 +192,9 @@ def sembrar(session: Session, hoy: Dia | None = None) -> None:
             lat=lat,
             lng=lng,
             dias_operacion=dias,
+            telefono=telefono_ficticio(100 + i),
+            # Un puesto sin WhatsApp, para que la ficha contemple ese caso.
+            whatsapp=None if nombre == "Pollería El Güero" else telefono_ficticio(100 + i),
         )
         session.add(comercio)
         session.flush()
@@ -253,11 +263,29 @@ def sembrar(session: Session, hoy: Dia | None = None) -> None:
         ),
     ]
 
+    # Punto donde cada proveedor atiende o entrega en la CDMX (para el mapa).
+    coordenadas_proveedor = {
+        "Distribuidora Hortícola del Valle": (19.3748, -99.0918),  # Central de Abasto
+        "Abarrotera Mayorista San Juan": (19.4295, -99.1430),  # Centro Histórico
+        "Cooperativa Hortalizas de Xochimilco": (19.2640, -99.0960),  # zona chinampera
+        "Aguacateros de Uruapan": (19.3705, -99.0865),  # punto de venta en la Central de Abasto
+    }
+
     proveedores: list[Proveedor] = []
     ofertas: dict[int, list[OfertaProveedor]] = {}
     for i, (nombre, tipo, zona, alcaldia, ofs) in enumerate(proveedores_def, 1):
         u = usuario(Rol.proveedor, i, alcaldia)
-        prov = Proveedor(usuario_id=u.id, nombre=nombre, tipo=tipo, zona=zona)
+        lat, lng = coordenadas_proveedor[nombre]
+        prov = Proveedor(
+            usuario_id=u.id,
+            nombre=nombre,
+            tipo=tipo,
+            zona=zona,
+            lat=lat,
+            lng=lng,
+            telefono=telefono_ficticio(200 + i),
+            whatsapp=telefono_ficticio(200 + i),
+        )
         session.add(prov)
         session.flush()
         proveedores.append(prov)
@@ -324,6 +352,28 @@ def sembrar(session: Session, hoy: Dia | None = None) -> None:
     orden(ceiba, sanjuan, EstadoOrden.confirmada, [(ofertas[sanjuan.id][0], 80)], 10)
     orden(martinez, xochimilco, EstadoOrden.solicitada, [(ofertas[xochimilco.id][1], 40)], 2)
     orden(rosita, sanjuan, EstadoOrden.rechazada, [(ofertas[sanjuan.id][2], 2)], 48)
+
+    # --- Favoritos y comentarios de clientes ------------------------------------------
+    for cliente, favoritos in [(clientes[0], [mary, ramirez]), (clientes[1], [guera, mary]), (clientes[2], [chuy])]:
+        for comercio in favoritos:
+            session.add(Favorito(usuario_id=cliente.id, comercio_id=comercio.id, creado_en=ahora() - timedelta(days=3)))
+
+    comentarios = [
+        (clientes[1], mary, "La verdura siempre fresca y Doña Mary te aparta el cilantro si le avisas.", 30),
+        (clientes[0], mary, "Buen precio en jitomate, llegar temprano porque se acaba.", 8),
+        (clientes[1], guera, "El mango ataulfo está buenísimo esta temporada.", 26),
+        (clientes[2], chuy, "Don Chuy da probadita de papaya. Los miércoles hay más variedad.", 50),
+        (clientes[0], ramirez, "Precios de mayoreo aunque compres poquito, pero hay que llevar efectivo.", 72),
+    ]
+    for cliente, comercio, texto, hace_horas in comentarios:
+        session.add(
+            Comentario(
+                usuario_id=cliente.id,
+                comercio_id=comercio.id,
+                texto=texto,
+                creado_en=ahora() - timedelta(hours=hace_horas),
+            )
+        )
 
     session.commit()
 

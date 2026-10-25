@@ -15,11 +15,12 @@ Que productores, mayoristas y almacenes publiquen sus ofertas de mayoreo, atiend
 
 ## Funcionalidades incluidas (MVP)
 
-- **Mis ofertas:** CRUD de ofertas (producto genérico, unidad, precio de mayoreo, cantidad mínima y disponible sí/no).
+- **Mis ofertas:** CRUD de ofertas (producto genérico, unidad, precio de mayoreo, cantidad mínima y disponible sí/no). **Sus precios de mayoreo alimentan el dashboard de precios** público.
 - **Órdenes recibidas:** lista por estado con acciones: confirmar o rechazar una `solicitada` y enviar una `confirmada`.
 - **Mis compradores:** comercios que le compran de manera activa, es decir, con órdenes recientes no rechazadas.
 - **Rutas compartidas de entrega:** agrupar órdenes de varios comerciantes cercanos en una sola ruta de entrega para abaratar costos.
-- **Perfil:** nombre, tipo (productor, mayorista o almacén) y zona. *Hecho como tarjeta en Órdenes.*
+- **Perfil:** nombre, tipo (productor, mayorista o almacén), zona, **teléfono y WhatsApp**. Es lo que se ve en su ficha pública. *Hecho como tarjeta en Órdenes, solo lectura.*
+- **Contactar al comercio:** botones Llamar y WhatsApp en cada orden y en "Mis compradores".
 
 ## Fuera de alcance
 
@@ -39,6 +40,7 @@ Que productores, mayoristas y almacenes publiquen sus ofertas de mayoreo, atiend
 | Método | Ruta | operationId (TS) | Estado |
 |---|---|---|---|
 | GET | `/proveedor/mi-perfil` | `proveedorMiPerfil` | ✅ hecho |
+| PATCH | `/proveedor/mi-perfil` | `proveedorActualizarMiPerfil` | ⏳ por crear (zona, teléfono, WhatsApp) |
 | GET | `/proveedor/ofertas` | `proveedorListarOfertas` | ⏳ por crear |
 | POST | `/proveedor/ofertas` | `proveedorCrearOferta` | ⏳ por crear |
 | PATCH | `/proveedor/ofertas/{id}` | `proveedorActualizarOferta` | ⏳ por crear |
@@ -52,12 +54,13 @@ Que productores, mayoristas y almacenes publiquen sus ofertas de mayoreo, atiend
 
 ## Criterios de aceptación
 
-- [ ] Una oferta marcada como no disponible deja de aparecer en "Abastecerme" del comercio.
+- [ ] Una oferta marcada como no disponible deja de aparecer en "Proveedores" del comercio.
 - [ ] Solo se ofrecen las acciones válidas para el estado de la orden; una inválida responde 409.
 - [ ] Un proveedor solo ve y modifica sus propias ofertas, órdenes y rutas (403/404 para las ajenas).
 - [ ] "Mis compradores" lista solo los comercios con órdenes activas de este proveedor.
 - [ ] Se puede crear una ruta con órdenes confirmadas de 2 o más comercios, y la ruta muestra sus paradas.
-- [ ] Paso 3 del flujo demo (`compartido.md`): el proveedor ve los comercios que le compran de manera activa.
+- [ ] Cambiar el precio de mayoreo de una oferta se refleja en el dashboard de precios.
+- [ ] Paso 4 del flujo demo (`compartido.md`): el proveedor ve los comercios que le compran de manera activa.
 
 ## Preguntas abiertas
 

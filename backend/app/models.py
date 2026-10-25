@@ -8,6 +8,7 @@ from datetime import datetime
 from enum import Enum
 from zoneinfo import ZoneInfo
 
+from sqlalchemy import UniqueConstraint
 from sqlalchemy.types import JSON, TypeDecorator
 from sqlmodel import Column, Field, Relationship, SQLModel
 
@@ -102,6 +103,9 @@ class Comercio(SQLModel, table=True):
     lat: float | None = None
     lng: float | None = None
     dias_operacion: list[Dia] = Field(default_factory=list, sa_column=Column(ListaDias))
+    # Contacto directo que se muestra en la ficha pública. 10 dígitos, sin lada internacional.
+    telefono: str | None = None
+    whatsapp: str | None = None
 
 
 class Proveedor(SQLModel, table=True):
@@ -110,6 +114,10 @@ class Proveedor(SQLModel, table=True):
     nombre: str
     tipo: TipoProveedor
     zona: str
+    lat: float | None = None  # punto donde atiende en la CDMX (para el mapa)
+    lng: float | None = None
+    telefono: str | None = None
+    whatsapp: str | None = None
 
 
 class Producto(SQLModel, table=True):
@@ -177,6 +185,27 @@ class OrdenAbastoItem(SQLModel, table=True):
     precio_unitario: float
 
     orden: OrdenAbasto = Relationship(back_populates="items")
+
+
+class Favorito(SQLModel, table=True):
+    """Comercio que un usuario (cliente) guardó como favorito."""
+
+    __table_args__ = (UniqueConstraint("usuario_id", "comercio_id"),)
+
+    id: int | None = Field(default=None, primary_key=True)
+    usuario_id: int = Field(foreign_key="usuario.id", index=True)
+    comercio_id: int = Field(foreign_key="comercio.id", index=True)
+    creado_en: datetime = Field(default_factory=ahora)
+
+
+class Comentario(SQLModel, table=True):
+    """Comentario de texto que un usuario deja en la ficha de un comercio (lectura pública)."""
+
+    id: int | None = Field(default=None, primary_key=True)
+    usuario_id: int = Field(foreign_key="usuario.id", index=True)
+    comercio_id: int = Field(foreign_key="comercio.id", index=True)
+    texto: str = Field(max_length=500)
+    creado_en: datetime = Field(default_factory=ahora)
 
 
 # --- Esquemas de lectura compartidos (respuestas con items anidados) -----------------

@@ -6,14 +6,20 @@
 
 ## Qué es
 
-**Tlalamatl** ("mapa de tierra" en náhuatl) es un prototipo (PoC de hackathon) de marketplace de dos niveles pensado para vivir dentro de la App CDMX (mobile-first, cargable como webview):
+**Tlalamatl** ("mapa de tierra" en náhuatl) es un prototipo (PoC de hackathon) pensado para vivir dentro de la App CDMX (mobile-first, cargable como webview).
 
-- **B2C:** clientes → comerciantes (Central de Abasto, mercados fijos, mercados sobre ruedas y tianguis).
-- **B2B:** comerciantes → proveedores (productores, mayoristas, almacenes).
+**No es un e-commerce: es una plataforma de contacto entre personas** de la cadena de abasto de la CDMX. La app no vende ni cobra. Muestra quién está dónde, qué ofrece, cuándo abre y a qué precio anda el producto, y la compra se hace en persona, en el puesto. Conecta dos niveles:
 
-Como piezas transversales, la app tiene un **mapa** de comercios y proveedores y un **dashboard de precios** (productos de temporada y canasta básica) que ven todos los roles.
+- **Clientes ↔ comerciantes** de la Central de Abasto, mercados fijos, mercados sobre ruedas y tianguis.
+- **Comerciantes ↔ proveedores** (productores, mayoristas, almacenes).
 
-Es una sola app con login demo diferenciado por rol. Es un mock: importan más la velocidad, la claridad y un flujo demo convincente que la robustez de producción. Usa identidad propia de Tlalamatl, nunca logos ni identidad gráfica oficial del Gobierno de la CDMX.
+**Lo público, sin login:**
+- El **mapa** de mercados, tianguis y proveedores, con la ficha de cada lugar.
+- El **dashboard de precios** (productos de temporada y canasta básica).
+
+**El login** (demo, por rol) solo hace falta para acciones personales: guardar favoritos, dejar comentarios y que comerciantes y proveedores administren sus datos y sus precios.
+
+Es un mock: importan más la velocidad, la claridad y un flujo demo convincente que la robustez de producción. Usa identidad propia de Tlalamatl, nunca logos ni identidad gráfica oficial del Gobierno de la CDMX.
 
 ## Dominio
 
@@ -36,12 +42,16 @@ Es una sola app con login demo diferenciado por rol. Es un mock: importan más l
 | Entidad | Campos clave |
 |---|---|
 | `Usuario` | nombre, email, rol, alcaldía |
-| `Comercio` | dueño, nombre, categoría, alcaldía, ubicación, lat/lng, `dias_operacion: list[Dia]` |
-| `Proveedor` | usuario, nombre, tipo (`productor`/`mayorista`/`almacen`), zona |
+| `Comercio` | dueño, nombre, categoría, alcaldía, ubicación, lat/lng, `dias_operacion: list[Dia]`, teléfono, WhatsApp |
+| `Proveedor` | usuario, nombre, tipo (`productor`/`mayorista`/`almacen`), zona, lat/lng, teléfono, WhatsApp |
+
+> Faltan **dos cambios al modelo**: el catálogo de productos (`ProductoBase`) y las rutas (`RutaEntrega`). Están listados en `docs/alcance/compartido.md`. Se agregan en `main` antes de usarlos en una rama.
 | `Producto` | comercio, nombre, precio, stock, unidad, `stock_minimo` |
 | `OfertaProveedor` | proveedor, producto genérico, unidad, precio de mayoreo, cantidad mínima, disponible |
 | `Pedido` + `PedidoItem` | cliente → comercio |
 | `OrdenAbasto` + `OrdenAbastoItem` | comercio → proveedor; el item puede apuntar al `producto_id` del comercio que reabastece |
+| `Favorito` | usuario, comercio (sin repetidos) |
+| `Comentario` | usuario, comercio, texto (≤ 500), fecha; lectura pública |
 
 **Máquinas de estado** (`backend/app/estados.py`; una transición inválida responde **409**):
 
@@ -89,7 +99,7 @@ Cada integrante trabaja **un giro** en **su propia rama**, y todas se integran e
 
 | Rama | Giro | Es dueña de |
 |---|---|---|
-| `rol/cliente` | Clientes (compradores) | `backend/app/routers/cliente.py`, `backend/app/routers/publico.py`, `backend/tests/test_cliente.py`, `backend/tests/test_publico.py`, `frontend/src/routes/cliente/**`, `docs/alcance/cliente.md` |
+| `rol/cliente` | Clientes (compradores) | `backend/app/routers/cliente.py`, `backend/app/routers/publico.py`, `backend/tests/test_cliente.py`, `backend/tests/test_publico.py`, `frontend/src/routes/cliente/**`, `frontend/src/routes/publico/**` (mapa, ficha y dashboard de precios, sin login), `docs/alcance/cliente.md` |
 | `rol/comercio` | Comerciantes | `backend/app/routers/comercio.py`, `backend/tests/test_comercio.py`, `frontend/src/routes/comercio/**`, `docs/alcance/comercio.md` |
 | `rol/proveedor` | Proveedores | `backend/app/routers/proveedor.py`, `backend/tests/test_proveedor.py`, `frontend/src/routes/proveedor/**`, `docs/alcance/proveedor.md` |
 
@@ -133,6 +143,7 @@ Debe salir vacío. En la rama `rol/cliente` excluye también `publico.py` y `tes
 - **No edites `frontend/src/api/`.** Después de cambiar el backend, corre `make gen-api` y usa las funciones y `...Options()`/`...Mutation()` generadas con TanStack Query.
 - **Usa componentes shadcn** (`@/components/ui/*`) antes de crear propios.
 - **Tests:** cada rol agrega los suyos en `backend/tests/test_<rol>.py`, usando las fixtures `client` y `login` de `conftest.py`.
+- **No es e-commerce:** no agregues carrito, pagos, pedidos ni inventario con stock sin acordarlo; el modelo todavía trae `Pedido` y `stock` del andamiaje, pero están fuera del MVP.
 - **Simplicidad:** sin Docker, Postgres, auth real ni librerías fuera del stack sin acordarlo. Código simple y legible, sin abstracciones prematuras. UI en español y mobile-first.
 
 ## Comandos

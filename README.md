@@ -1,11 +1,10 @@
 # Tlalamatl
 
-*"Mapa de tierra"* en náhuatl. Es un prototipo de hackathon: un marketplace de dos niveles para la CDMX, pensado para vivir dentro de la App CDMX como webview.
+*"Mapa de tierra"* en náhuatl. Es un prototipo de hackathon para la CDMX, pensado para vivir dentro de la App CDMX como webview.
 
-- **Clientes** compran a **comerciantes** de la Central de Abasto, mercados fijos, mercados sobre ruedas y tianguis.
-- **Comerciantes** se abastecen con **proveedores** (productores, mayoristas y almacenes).
+**No es una tienda en línea, es una plataforma de contacto.** Ayuda a que se encuentren quienes compran, quienes venden en tianguis, mercados y la Central de Abasto, y quienes producen o surten al mayoreo. Cualquiera puede abrir el **mapa** y el **dashboard de precios** sin cuenta. La compra se hace en persona.
 
-Es una sola app con login demo por rol. Todo es mock. Antes de contribuir, lee **[AGENTS.md](AGENTS.md)**.
+Es una sola app; el login demo por rol solo hace falta para favoritos, comentarios y para que comerciantes y proveedores administren sus datos y precios. Todo es mock. Antes de contribuir, lee **[AGENTS.md](AGENTS.md)**.
 
 ## Levantarlo en menos de 5 minutos
 
@@ -61,11 +60,10 @@ Edítalos en tu rama como cualquier archivo. Si un cambio de código altera el a
 
 Esto funciona de punta a punta cuando las 3 ramas estén integradas en `main`. La fuente es `docs/alcance/compartido.md`.
 
-1. **Mapa:** al entrar se ve el mapa de la CDMX con comercios y proveedores. Tocar uno abre su ficha.
-2. **Cliente:** *Entrar como cliente*, explorar comercios (p. ej. "abierto hoy") y marcar tianguis o mercados como **favoritos**.
-3. **Proveedor:** entrar como *Distribuidora Hortícola del Valle* y ver los **comercios que le compran** de manera activa.
-4. **Comerciante:** entrar como el comerciante de *Verduras Doña Mary* y ver a los **proveedores** y sus ofertas.
-5. **Todos:** abrir el **dashboard de precios** con los productos de temporada y la canasta básica.
+1. **Sin cuenta:** se abre la app y aparece el mapa de la CDMX con mercados, tianguis y proveedores. Tocar uno abre su ficha. Desde ahí se llega al **dashboard de precios** (temporada y canasta básica).
+2. **Cliente:** *Entrar* como cliente, guardar tianguis o mercados en **favoritos** y **dejar un comentario**.
+3. **Comerciante:** entrar como el comerciante de *Verduras Doña Mary*, actualizar el **precio** de un producto y ver a los **proveedores**. Su precio se refleja en el dashboard.
+4. **Proveedor:** entrar como *Distribuidora Hortícola del Valle* y ver los **comercios que le compran** de manera activa.
 
 ## Estado actual
 

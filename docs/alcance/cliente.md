@@ -2,36 +2,43 @@
 
 > Estado: BORRADOR — editado por el equipo. Este archivo manda sobre cualquier suposición del agente.
 
-Dueña: rama `rol/cliente`. También lee `docs/alcance/compartido.md`; el mapa y el dashboard de precios están definidos ahí.
+Dueña: rama `rol/cliente`, que también es dueña de la exploración pública (mapa, ficha y dashboard de precios). Lee también `docs/alcance/compartido.md`.
 
 ## Objetivo
 
-Que una persona en la CDMX encuentre rápido qué tianguis, mercado o bodega de la Central de Abasto está abierto hoy cerca de ella y vea sus productos (entregable mínimo).
+Que una persona en la CDMX encuentre rápido qué tianguis, mercado o bodega de la Central de Abasto está abierto hoy cerca de ella y vea sus productos y precios (entregable mínimo). Esto lo puede hacer **sin cuenta**; con sesión, además guarda sus lugares favoritos y deja comentarios.
 
 ## Usuario y contexto de uso
 
 - Vecinas y vecinos que compran despensa semanal o del día, desde el celular y dentro de la App CDMX.
 - Uso rápido, a veces en la calle y con conexión limitada. Necesita textos claros y botones grandes.
+- La mayoría solo va a explorar sin cuenta; el login es para quien quiere guardar o comentar.
 
 ## Funcionalidades incluidas (MVP)
 
-- **Explorar comercios**, con filtros por categoría (Central de Abasto, mercado fijo, sobre ruedas, tianguis), por alcaldía y por "abierto hoy".
-- **Ver el detalle de un comercio:** ubicación, días de operación y productos con precio, unidad y disponibilidad.
+**Sin login** (exploración pública, definida en `compartido.md`):
+- **Explorar comercios** en el mapa o en una lista, con filtros por categoría (Central de Abasto, mercado fijo, sobre ruedas, tianguis), por alcaldía y por "abierto hoy".
+- **Ver el detalle de un comercio:** ubicación, días de operación, productos con precio y unidad, y comentarios.
+
+**Con login de cliente:**
 - **Lista de favoritos:** marcar y desmarcar comercios como favoritos. Incluye dos vistas: "Cerca de mí" y "Mis favoritos".
+- **Comentarios:** dejar un comentario en un comercio y ver mis comentarios.
 
 ## Fuera de alcance
 
-- Carrito, pedidos y su seguimiento (a futuro). El andamiaje trae la pantalla "Mis pedidos" y el endpoint `GET /cliente/pedidos`; se quitan de la navegación del cliente o se dejan ocultos.
+- Carrito, pedidos y su seguimiento: la compra es en persona. El andamiaje trae la pantalla "Mis pedidos" y el endpoint `GET /cliente/pedidos`; se quitan de la navegación del cliente.
 - Pagos en línea.
 - Envío a domicilio.
-- Reseñas o calificaciones de comercios.
-- Comparar precios entre comercios.
+- Calificaciones con estrellas o rankings de comercios (solo comentarios de texto).
+- Comparar precios entre comercios. El dashboard de precios de `compartido.md` ya muestra dónde está más barato cada producto.
 
 ## Pantallas
 
-1. **Explorar (`/cliente`):** lista de comercios con filtros. *Versión inicial hecha: lista sin filtros.*
-2. **Detalle de comercio (`/cliente/comercio/:id`):** información, productos y botón "Agregar a favoritos". *Por hacer.*
-3. **Favoritos (`/cliente/favoritos`):** pestañas "Cerca de mí" y "Mis favoritos". *Por hacer.* Reemplaza a "Carrito" y "Mis pedidos" en la navegación inferior.
+1. **Mapa, ficha y dashboard de precios (públicas):** ver `compartido.md`. Viven en `frontend/src/routes/publico/`.
+2. **Favoritos (`/cliente`):** pestañas "Cerca de mí" y "Mis favoritos". Es el inicio del cliente con sesión. *Por hacer.*
+3. **Mis comentarios (`/cliente/comentarios`):** lista de comentarios que dejé, con enlace a la ficha. *Por hacer.*
+
+La navegación inferior del cliente queda así: Mapa (`/`), Favoritos, Mis comentarios. Reemplaza a "Explorar", "Carrito" y "Mis pedidos" del andamiaje.
 
 ## Endpoints que consume
 
@@ -40,20 +47,26 @@ Que una persona en la CDMX encuentre rápido qué tianguis, mercado o bodega de 
 | GET | `/publico/comercios?categoria&alcaldia&abierto_hoy` | `publicoListarComercios` | ✅ hecho |
 | GET | `/publico/comercios/{id}` | `publicoObtenerComercio` | ✅ hecho |
 | GET | `/publico/comercios/{id}/productos` | `publicoListarProductos` | ✅ hecho |
-| GET | `/cliente/favoritos` | `clienteListarFavoritos` | ⏳ por crear, solo si los favoritos se guardan en el backend (ver preguntas). Requiere una tabla `Favorito` (cambio en `models.py`, en `main`). |
-| PUT | `/cliente/favoritos/{comercio_id}` | `clienteAgregarFavorito` | ⏳ ídem |
-| DELETE | `/cliente/favoritos/{comercio_id}` | `clienteQuitarFavorito` | ⏳ ídem |
+| GET | `/publico/comercios/{id}/comentarios` | `publicoListarComentarios` | ⏳ por crear (ver `compartido.md`) |
+| GET | `/cliente/favoritos` | `clienteListarFavoritos` | ⏳ por crear (la tabla `Favorito` ya existe). |
+| PUT | `/cliente/favoritos/{comercio_id}` | `clienteAgregarFavorito` | ⏳ por crear |
+| DELETE | `/cliente/favoritos/{comercio_id}` | `clienteQuitarFavorito` | ⏳ por crear |
+| POST | `/cliente/comercios/{comercio_id}/comentarios` | `clienteComentar` | ⏳ por crear; cuerpo `{ texto }` (la tabla `Comentario` ya existe). |
+| GET | `/cliente/comentarios` | `clienteMisComentarios` | ⏳ por crear |
 | GET | `/cliente/pedidos` | `clienteMisPedidos` | Existe en el andamiaje; fuera del MVP |
 
 ## Criterios de aceptación
 
+- [ ] Sin sesión se pueden explorar comercios, abrir su ficha y leer sus productos, precios y comentarios.
 - [ ] Con el filtro "abierto hoy" activo solo aparecen comercios cuyo `dias_operacion` incluye el día de hoy.
 - [ ] Se puede filtrar por categoría y por alcaldía, y los filtros se combinan.
-- [ ] Se pueden agregar mercados o tianguis a favoritos y quitarlos, y la lista sobrevive al recargar la página.
+- [ ] Con sesión de cliente se pueden agregar mercados o tianguis a favoritos y quitarlos, y la lista sobrevive al recargar.
 - [ ] "Cerca de mí" muestra primero los comercios más cercanos al cliente.
-- [ ] Paso 2 del flujo demo (`compartido.md`): el cliente marca comercios como favoritos.
+- [ ] Un cliente puede dejar un comentario en un comercio, y el comentario aparece en la ficha pública.
+- [ ] Paso 2 del flujo demo (`compartido.md`): el cliente entra, guarda favoritos y deja un comentario.
 
 ## Preguntas abiertas
 
-- ¿La lista de favoritos se guarda en `localStorage` o en el backend? Si es en el backend, sobrevive al cambiar de dispositivo, pero requiere la tabla `Favorito`.
 - ¿Qué significa "cerca de mí"? ¿Misma alcaldía que el usuario (`Usuario.alcaldia`, ya existe) o distancia por geolocalización del teléfono?
+- ¿Un cliente puede editar o borrar sus comentarios?
+- ¿Hay límite de largo en los comentarios?

@@ -1,0 +1,463 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tlalamatl</title>
+<link rel="icon" href="img/isotipo.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* Plano de un mercado público (m2) y ficha de local (m3). Mismos tokens que m1.html. */
+  :root {
+    --guinda: #9f2241;
+    --guinda-osc: #771a31;
+    --rosa: #f598c6;
+    --rosa-claro: #fde3ef;
+    --tinta: #231f20;
+    --tenue: #5f5a5c;
+    --linea: #e7e1e3;
+    --blanco: #ffffff;
+    --foco: #1f6fd1;
+    --verde: #177a4f;
+    /* antipatrón permitido: radio redondeado, porque es el lenguaje de App CDMX (decisión 0001) */
+    --radio: 14px;
+    --radio-chico: 10px;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body { margin: 0; background: var(--blanco); color: var(--tinta); font: 15px/1.45 Montserrat, system-ui, -apple-system, "Segoe UI", sans-serif; font-variant-numeric: tabular-nums; }
+  button, input { font: inherit; color: inherit; }
+  :focus-visible { outline: 3px solid var(--foco); outline-offset: 2px; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  svg.ico { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* ---------- Barra superior y greca (igual que m1) ---------- */
+  .barra { background: var(--guinda); color: var(--blanco); padding: 10px 16px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 12px; }
+  .marca { display: flex; align-items: center; gap: 12px; color: var(--blanco); text-decoration: none; }
+  .isotipo { width: 44px; height: 44px; flex: none; background: currentColor; -webkit-mask: url(img/isotipo.svg) center / contain no-repeat; mask: url(img/isotipo.svg) center / contain no-repeat; }
+  .marca .divisor { width: 1.5px; align-self: stretch; background: currentColor; opacity: .6; margin: 4px 0; }
+  .marca b { display: block; font-size: 21px; font-weight: 800; letter-spacing: .06em; line-height: 1; }
+  .marca .lema { display: block; font-size: 11px; font-weight: 600; letter-spacing: .02em; opacity: .9; margin-top: 3px; }
+  .ingresar { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 6px 12px 6px 8px; background: transparent; color: var(--blanco); border: 1.5px solid var(--blanco); border-radius: 0; font-size: 13px; font-weight: 700; cursor: pointer; }
+  .silueta { width: 22px; height: 22px; fill: var(--blanco); }
+  .greca {
+    height: 12px; background-color: var(--guinda-osc);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='12'%3E%3Cg fill='none' stroke='%23f598c6' stroke-width='1.6'%3E%3Cpath d='M0 9.5H5V4H11V9.5H16'/%3E%3Cpath d='M21 3.5v6M25 3.5v6M29 3.5v6M33 3.5v6'/%3E%3C/g%3E%3C/svg%3E");
+    background-repeat: repeat-x; background-position: center;
+  }
+
+  /* ---------- Barra del mercado: volver, elegir mercado, buscar ---------- */
+  .filtros { background: var(--rosa); }
+  .barra-filtros { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; padding: 8px 16px; }
+  .volver { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 6px 10px; color: var(--guinda-osc); font-weight: 700; text-decoration: none; }
+  .volver:hover { background: rgba(255,255,255,.5); }
+  .mercados { display: flex; flex-wrap: wrap; gap: 2px; }
+  .mercado-btn { min-height: 44px; padding: 6px 12px; border: 0; background: transparent; color: var(--guinda-osc); font-weight: 600; font-size: 15px; cursor: pointer; }
+  .mercado-btn:hover { background: rgba(255,255,255,.5); }
+  .mercado-btn[aria-current="true"] { font-weight: 800; text-decoration: underline; text-decoration-thickness: 3px; text-underline-offset: 7px; }
+  .buscar { display: flex; align-items: center; gap: 10px; background: var(--blanco); border-radius: var(--radio); padding: 0 12px; min-height: 44px; color: var(--tenue); margin-left: auto; flex: 1 1 260px; max-width: 420px; }
+  .buscar input { border: 0; outline: 0; flex: 1; min-width: 0; height: 42px; background: transparent; color: var(--tinta); }
+  .buscar:focus-within { outline: 3px solid var(--foco); outline-offset: 2px; }
+
+  /* ---------- Cuerpo ---------- */
+  .cuerpo { display: flex; flex-direction: column; }
+  .plano-caja { position: relative; height: min(60vh, 120vw); min-height: 320px; overflow: hidden; background: var(--blanco); }
+  #plano { width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
+  #plano.arrastrando { cursor: grabbing; }
+  .muro { fill: var(--blanco); stroke: var(--guinda-osc); stroke-width: 3; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+  .pasillo-txt { font-size: 2.2px; fill: var(--tenue); font-weight: 600; text-anchor: middle; pointer-events: none; }
+  .acceso { fill: var(--guinda-osc); font-weight: 800; text-anchor: middle; pointer-events: none; }
+  .local { stroke: var(--blanco); stroke-width: .35; cursor: pointer; }
+  .local:hover { stroke: var(--tinta); stroke-width: .6; }
+  .local.demo { stroke: var(--tinta); stroke-width: .5; }
+  .local.elegido { stroke: var(--foco); stroke-width: 1; }
+  .local.apagado { opacity: .18; }
+  .num-demo { font-weight: 800; fill: var(--blanco); text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+  .zoom { position: absolute; right: 12px; bottom: 12px; display: flex; flex-direction: column; gap: 6px; }
+  .zoom button { width: 44px; height: 44px; border-radius: var(--radio-chico); border: 1px solid var(--linea); background: var(--blanco); color: var(--guinda); display: grid; place-items: center; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,.15); }
+  .aviso-plano { position: absolute; left: 12px; bottom: 12px; max-width: 320px; background: rgba(255,255,255,.94); border: 1px solid var(--linea); border-radius: var(--radio-chico); padding: 8px 10px; font-size: 12px; color: var(--tenue); }
+
+  .lado { padding: 16px; }
+  .mercado h1 { margin: 0 0 2px; font-size: 22px; font-weight: 800; line-height: 1.15; }
+  .mercado .donde { margin: 0 0 10px; color: var(--tenue); font-size: 14px; }
+  .datos { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; margin: 0 0 16px; font-size: 14px; }
+  .datos dt { color: var(--tenue); }
+  .datos dd { margin: 0; font-weight: 600; }
+  h2 { font-size: 16px; font-weight: 700; margin: 18px 0 8px; }
+  .zonas { list-style: none; margin: 0; padding: 0; }
+  .zona { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 36px; padding: 4px 8px; border: 0; background: none; text-align: left; cursor: pointer; font-size: 14px; }
+  .zona:hover { background: var(--rosa-claro); }
+  .zona[aria-pressed="true"] { background: var(--rosa-claro); font-weight: 800; color: var(--guinda-osc); }
+  .zona .muestra { width: 16px; height: 16px; flex: none; background: var(--c); border: 1px solid rgba(0,0,0,.15); }
+  .zona .n { margin-left: auto; color: var(--tenue); font-weight: 500; }
+  .zona .muestra.demo { background: var(--guinda); border-color: var(--tinta); }
+  .puestos { list-style: none; margin: 0; padding: 0; }
+  .puesto { display: grid; grid-template-columns: 28px 1fr; gap: 10px; align-items: center; width: 100%; text-align: left; background: var(--blanco); border: 1px solid var(--linea); border-radius: var(--radio); padding: 10px 12px; margin-bottom: 8px; cursor: pointer; }
+  .puesto:hover { border-color: var(--rosa); }
+  .puesto[aria-current="true"] { border-color: var(--guinda); box-shadow: inset 0 0 0 1px var(--guinda); }
+  .puesto .num { width: 28px; height: 28px; display: grid; place-items: center; background: var(--guinda); color: var(--blanco); font-weight: 800; font-size: 13px; }
+  .puesto b { display: block; font-size: 15px; }
+  .puesto span { font-size: 13px; color: var(--tenue); }
+  .vacio { color: var(--tenue); font-size: 14px; }
+
+  /* Ficha del local (m3) */
+  .ficha { border: 1px solid var(--linea); border-radius: var(--radio); padding: 16px; margin-bottom: 14px; background: var(--blanco); }
+  .ficha[hidden] { display: none; }
+  .ficha .etiqueta { display: inline-block; font-size: 12px; font-weight: 700; color: var(--tinta); background: var(--c); padding: 3px 10px; border-radius: 8px; }
+  .ficha h3 { margin: 10px 0 2px; font-size: 20px; font-weight: 800; line-height: 1.2; }
+  .ficha .quien { margin: 0 0 10px; color: var(--tenue); font-size: 14px; }
+  .ficha dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; margin: 0 0 12px; font-size: 14px; }
+  .ficha dt { color: var(--tenue); }
+  .ficha dd { margin: 0; font-weight: 600; }
+  .contacto { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+  .accion { display: inline-flex; align-items: center; gap: 8px; text-decoration: none; border-radius: var(--radio-chico); padding: 10px 14px; min-height: 44px; font-weight: 700; font-size: 14px; border: 2px solid var(--guinda); color: var(--guinda); background: var(--blanco); }
+  .accion.principal { background: var(--guinda); color: var(--blanco); }
+  .accion.wa { border-color: var(--verde); color: var(--verde); }
+  .inventario { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .inventario th { text-align: left; font-size: 12px; color: var(--tenue); font-weight: 600; padding: 4px 0; border-bottom: 1px solid var(--linea); }
+  .inventario td { padding: 6px 0; border-bottom: 1px solid var(--linea); }
+  .inventario td.precio { text-align: right; font-weight: 700; white-space: nowrap; }
+  .inventario .unidad { color: var(--tenue); font-weight: 500; }
+  .nota { font-size: 12px; color: var(--tenue); margin: 10px 0 0; }
+  .cerrar { float: right; border: 0; background: transparent; color: var(--tenue); width: 44px; height: 44px; margin: -10px -10px 0 0; display: grid; place-items: center; cursor: pointer; }
+  .pie { font-size: 12px; color: var(--tenue); margin: 20px 0 8px; }
+
+  @media (max-width: 420px) {
+    .ingresar span { display: none; }
+    .ingresar { padding: 6px; }
+    .marca .lema { font-size: 10px; }
+    .isotipo { width: 38px; height: 38px; }
+    .marca b { font-size: 19px; }
+    .buscar { margin-left: 0; max-width: none; }
+  }
+  @media (min-width: 900px) {
+    body { display: grid; grid-template-rows: auto auto auto 1fr; height: 100vh; }
+    .cuerpo { flex-direction: row-reverse; min-height: 0; }
+    .plano-caja { height: auto; flex: 1; }
+    .lado { width: 420px; flex: none; overflow-y: auto; border-right: 1px solid var(--linea); }
+  }
+</style>
+</head>
+<body>
+
+<header class="barra">
+  <a class="marca" href="m1.html" aria-label="TLALAMATL, inicio">
+    <span class="isotipo" aria-hidden="true"></span>
+    <span class="divisor" aria-hidden="true"></span>
+    <span><b>TLALAMATL</b><span class="lema">Mercados de la Ciudad de México</span></span>
+  </a>
+  <button type="button" class="ingresar" aria-label="Iniciar sesión">
+    <svg viewBox="0 0 24 24" aria-hidden="true" class="silueta"><circle cx="12" cy="6.5" r="4"/><path d="M4 22v-3.2C4 14.9 7.6 12.5 12 12.5s8 2.4 8 6.3V22z"/></svg>
+    <span>Iniciar sesión</span>
+  </button>
+</header>
+<div class="greca" aria-hidden="true"></div>
+
+<nav class="filtros" aria-label="Mercado">
+  <div class="barra-filtros">
+    <a class="volver" href="m1.html">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>Mapa
+    </a>
+    <div class="mercados" id="mercados" role="group" aria-label="Elegir mercado"></div>
+    <label class="buscar">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+      <span class="sr">Buscar un producto o un puesto en este mercado</span>
+      <input id="q" type="search" placeholder="¿Qué buscas? Rosa, camarón, tostada…" autocomplete="off">
+    </label>
+  </div>
+</nav>
+
+<div class="cuerpo">
+  <div class="plano-caja">
+    <svg id="plano" role="img" aria-label="Plano del mercado con sus locales por zona"></svg>
+    <p class="aviso-plano" id="aviso"></p>
+    <div class="zoom">
+      <button type="button" id="acercar" aria-label="Acercar"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+      <button type="button" id="alejar" aria-label="Alejar"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+      <button type="button" id="encuadrar" aria-label="Ver todo el mercado"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg></button>
+    </div>
+  </div>
+  <div class="lado">
+    <article class="ficha" id="ficha" hidden aria-live="polite"></article>
+    <section class="mercado" id="mercado"></section>
+    <h2>Zonas</h2>
+    <ul class="zonas" id="zonas"></ul>
+    <h2 id="t-puestos">Puestos en Tlalamatl</h2>
+    <ul class="puestos" id="puestos"></ul>
+    <p class="pie">Prototipo de hackatón; no es una aplicación oficial del Gobierno de la Ciudad de México. Contorno del edificio: OpenStreetMap. Datos del mercado: SEDECO, Datos Abiertos CDMX. La distribución de zonas y locales, los locatarios, los teléfonos (5500…, números que no existen) y los inventarios son ilustrativos.</p>
+  </div>
+</div>
+
+<script src="datos/planos.js"></script>
+<script>
+(() => {
+  const ORDEN = Object.keys(PLANOS);
+  // Un color por zona: el color dice el giro del local
+  const COLORES = ["#f4b6c8", "#b9dcae", "#ffd98a", "#b3d3f2", "#d8c2ee", "#ffc29e"];
+  const PASILLO = 2.4, MARGEN_MURO = 1.6;
+
+  const $ = (s) => document.querySelector(s);
+  const NS = "http://www.w3.org/2000/svg";
+  const nodo = (tag, attrs = {}) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); return e; };
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const pesos = (n) => n.toLocaleString("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: n % 1 ? 2 : 0 });
+  const sinAcentos = (s) => s.toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "");
+  const fmtTel = (t) => `${t.slice(0, 2)} ${t.slice(2, 6)} ${t.slice(6)}`;
+
+  const params = new URLSearchParams(location.search);
+  const estado = { id: PLANOS[params.get("mercado")] ? params.get("mercado") : ORDEN[0], zona: null, q: "", elegido: null };
+  let plano, locales = [];
+
+  // ---------- Geometría ----------
+  function dentro([x, y], poli) {
+    let si = false;
+    for (let i = 0, j = poli.length - 1; i < poli.length; j = i++) {
+      const [xi, yi] = poli[i], [xj, yj] = poli[j];
+      if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) si = !si;
+    }
+    return si;
+  }
+  function area(poli) {
+    let a = 0;
+    for (let i = 0, j = poli.length - 1; i < poli.length; j = i++) a += (poli[j][0] + poli[i][0]) * (poli[j][1] - poli[i][1]);
+    return Math.abs(a / 2);
+  }
+
+  // Bandas de dos locales de fondo separadas por pasillos a lo largo del edificio, y un pasillo transversal
+  // cada 12 locales. El tamaño del local se calcula para que quepan los locales que reporta SEDECO.
+  function generaLocales(p) {
+    const A = area(p.contorno) * 0.92;
+    const N = p.locales;
+    const w = (-PASILLO + Math.sqrt(PASILLO ** 2 + (16 * A) / N)) / 4;
+    const celdas = [];
+    for (let y = MARGEN_MURO + PASILLO; y + 2 * w <= p.alto - MARGEN_MURO; y += 2 * w + PASILLO) {
+      for (let fila = 0; fila < 2; fila++) {
+        const y0 = y + fila * w;
+        let col = 0;
+        for (let x = MARGEN_MURO; x + w <= p.ancho - MARGEN_MURO; x += w) {
+          if (col > 0 && col % 12 === 0) { x += PASILLO; if (x + w > p.ancho - MARGEN_MURO) break; }
+          col++;
+          const esquinas = [[x, y0], [x + w, y0], [x, y0 + w], [x + w, y0 + w]];
+          if (esquinas.every((e) => dentro(e, p.contorno))) celdas.push({ x, y: y0, w, cx: x + w / 2, cy: y0 + w / 2 });
+        }
+      }
+    }
+    // Zonas por franjas a lo largo del edificio, en proporción a su parte
+    celdas.sort((a, b) => a.cx - b.cx || a.cy - b.cy);
+    const lista = celdas.slice(0, N);
+    // Cada zona termina en una columna completa para que no se mezclen colores dentro de una columna
+    let zona = 0, acumulado = p.zonas[0].parte * lista.length, xPrev = null;
+    lista.forEach((c, i) => {
+      const otraColumna = xPrev !== null && Math.abs(c.cx - xPrev) > 1e-6;
+      if (otraColumna && i >= acumulado && zona < p.zonas.length - 1) { zona++; acumulado += p.zonas[zona].parte * lista.length; }
+      c.zona = zona;
+      xPrev = c.cx;
+    });
+    // Número de local: de arriba abajo y de izquierda a derecha, como se recorre el mercado
+    [...lista].sort((a, b) => a.cy - b.cy || a.cx - b.cx).forEach((c, n) => { c.num = n + 1; });
+    // Los puestos demo van repartidos dentro de su zona
+    const usados = new Set();
+    p.localesDemo.forEach((d, k) => {
+      const zi = p.zonas.findIndex((z) => z.nombre === d.zona);
+      const deZona = lista.filter((c) => c.zona === zi && !usados.has(c));
+      const c = deZona[Math.floor(((k * 7 + 3) % 11) / 11 * deZona.length)] || deZona[0];
+      if (c) { c.demo = d; c.demoN = k + 1; usados.add(c); }
+    });
+    return lista;
+  }
+
+  // ---------- Vista: zoom y arrastre (igual que m1) ----------
+  const svg = $("#plano");
+  let vista, TODO;
+  function ajusta(v) {
+    const r = svg.clientWidth / Math.max(1, svg.clientHeight);
+    const cx = v.x + v.w / 2, cy = v.y + v.h / 2;
+    let w = v.w, h = v.h;
+    if (w / h < r) w = h * r; else h = w / r;
+    return { x: cx - w / 2, y: cy - h / 2, w, h };
+  }
+  function aplica() { vista = ajusta(vista); svg.setAttribute("viewBox", `${vista.x} ${vista.y} ${vista.w} ${vista.h}`); }
+  const k = () => vista.w / Math.max(1, svg.clientWidth);
+  function zoomEn(f, px, py) {
+    const u = k();
+    const ux = vista.x + (px ?? svg.clientWidth / 2) * u, uy = vista.y + (py ?? svg.clientHeight / 2) * u;
+    const w = Math.min(TODO.w * 1.5, Math.max(TODO.w / 12, vista.w / f));
+    const s = w / vista.w;
+    vista = { x: ux - (ux - vista.x) * s, y: uy - (uy - vista.y) * s, w, h: vista.h * s };
+    aplica();
+  }
+  svg.addEventListener("wheel", (e) => { e.preventDefault(); const r = svg.getBoundingClientRect(); zoomEn(e.deltaY < 0 ? 1.25 : 0.8, e.clientX - r.left, e.clientY - r.top); }, { passive: false });
+  const punteros = new Map();
+  let pinza = 0, movido = false;
+  svg.addEventListener("pointerdown", (e) => { punteros.set(e.pointerId, { x: e.clientX, y: e.clientY }); movido = false; if (punteros.size === 2) { const [a, b] = [...punteros.values()]; pinza = Math.hypot(a.x - b.x, a.y - b.y); } });
+  svg.addEventListener("pointermove", (e) => {
+    if (!punteros.has(e.pointerId)) return;
+    const antes = punteros.get(e.pointerId), ahora = { x: e.clientX, y: e.clientY };
+    punteros.set(e.pointerId, ahora);
+    if (punteros.size === 1) {
+      const dx = ahora.x - antes.x, dy = ahora.y - antes.y;
+      if (!movido && Math.hypot(dx, dy) < 3) return;
+      if (!movido) { movido = true; svg.setPointerCapture(e.pointerId); svg.classList.add("arrastrando"); }
+      vista.x -= dx * k(); vista.y -= dy * k(); aplica();
+    } else if (punteros.size === 2) {
+      movido = true;
+      const [a, b] = [...punteros.values()], d = Math.hypot(a.x - b.x, a.y - b.y), r = svg.getBoundingClientRect();
+      if (pinza) zoomEn(d / pinza, (a.x + b.x) / 2 - r.left, (a.y + b.y) / 2 - r.top);
+      pinza = d;
+    }
+  });
+  const suelta = (e) => { punteros.delete(e.pointerId); if (punteros.size < 2) pinza = 0; svg.classList.remove("arrastrando"); };
+  svg.addEventListener("pointerup", suelta);
+  svg.addEventListener("pointercancel", suelta);
+  $("#acercar").addEventListener("click", () => zoomEn(1.5));
+  $("#alejar").addEventListener("click", () => zoomEn(1 / 1.5));
+  $("#encuadrar").addEventListener("click", () => { vista = { ...TODO }; aplica(); });
+  new ResizeObserver(() => vista && aplica()).observe(svg);
+
+  // ---------- Dibujo del plano ----------
+  function dibujaPlano() {
+    svg.replaceChildren();
+    const m = Math.max(plano.ancho, plano.alto) * 0.06;
+    TODO = { x: -m, y: -m * 1.4, w: plano.ancho + 2 * m, h: plano.alto + 2.8 * m };
+    vista = { ...TODO };
+
+    svg.appendChild(nodo("polygon", { points: plano.contorno.map((p) => p.join(",")).join(" "), class: "muro" }));
+    const g = nodo("g", { id: "locales" });
+    for (const c of locales) {
+      const r = nodo("rect", { x: c.x + .15, y: c.y + .15, width: c.w - .3, height: c.w - .3, class: "local" + (c.demo ? " demo" : ""), fill: c.demo ? "var(--guinda)" : COLORES[c.zona % COLORES.length], "data-num": c.num });
+      r.appendChild(nodo("title")).textContent = c.demo ? `${c.demo.puesto}, local ${c.num}` : `Local ${c.num}, ${plano.zonas[c.zona].nombre}`;
+      g.appendChild(r);
+      if (c.demo) { const t = nodo("text", { x: c.cx, y: c.cy, class: "num-demo", "font-size": c.w * .55 }); t.textContent = c.demoN; g.appendChild(t); }
+    }
+    svg.appendChild(g);
+    // Accesos (ilustrativos) a media fachada en los dos lados largos
+    const fs = Math.max(plano.ancho, plano.alto) * 0.022;
+    for (const y of [-fs * 0.6, plano.alto + fs * 1.4]) {
+      const t = nodo("text", { x: plano.ancho / 2, y, class: "acceso", "font-size": fs }); t.textContent = "Acceso"; svg.appendChild(t);
+    }
+    aplica();
+  }
+
+  // ---------- Panel ----------
+  function pintaMercados() {
+    $("#mercados").innerHTML = ORDEN.map((id) =>
+      `<button type="button" class="mercado-btn" data-id="${id}" aria-current="${id === estado.id}">${PLANOS[id].corto}</button>`).join("");
+  }
+
+  function pintaMercado() {
+    const p = plano;
+    $("#mercado").innerHTML = `
+      <h1>${esc(p.nombre)}</h1>
+      <p class="donde">${esc(p.alcaldia)}${p.colonia ? `, ${esc(p.colonia)}` : ""}</p>
+      <dl class="datos">
+        <dt>Ubicación</dt><dd>${esc(p.ubicacion || "")}</dd>
+        <dt>Locales</dt><dd>${p.locales.toLocaleString("es-MX")}</dd>
+        ${p.giro ? `<dt>Giro</dt><dd>${esc(p.giro)}</dd>` : ""}
+        ${p.anio ? `<dt>Inaugurado</dt><dd>${esc(p.anio)}</dd>` : ""}
+      </dl>`;
+    $("#aviso").textContent = `Contorno real del edificio; zonas y locales ilustrativos. Se dibujan ${locales.length.toLocaleString("es-MX")} de los ${p.locales.toLocaleString("es-MX")} locales que reporta SEDECO.`;
+  }
+
+  function coincide(d) {
+    const q = sinAcentos(estado.q.trim());
+    return !q || sinAcentos([d.puesto, d.zona, ...d.inventario.map((i) => i.producto)].join(" ")).includes(q);
+  }
+
+  function pintaZonas() {
+    const cuenta = plano.zonas.map((_, i) => locales.filter((c) => c.zona === i).length);
+    $("#zonas").innerHTML = plano.zonas.map((z, i) => `
+      <li><button type="button" class="zona" data-zona="${i}" style="--c:${COLORES[i % COLORES.length]}" aria-pressed="${estado.zona === i}">
+        <span class="muestra"></span>${esc(z.nombre)}<span class="n">${cuenta[i]} locales</span></button></li>`).join("") +
+      `<li><span class="zona" style="cursor:default"><span class="muestra demo"></span>En Tlalamatl, con ficha<span class="n">${plano.localesDemo.length}</span></span></li>`;
+  }
+
+  function pintaPuestos() {
+    const lista = locales.filter((c) => c.demo && coincide(c.demo) && (estado.zona === null || c.zona === estado.zona)).sort((a, b) => a.demoN - b.demoN);
+    $("#t-puestos").textContent = estado.q ? `Resultados para «${estado.q}»` : "Puestos en Tlalamatl";
+    $("#puestos").innerHTML = lista.length ? lista.map((c) => `
+      <li><button type="button" class="puesto" data-num="${c.num}" aria-current="${estado.elegido === c.num}">
+        <span class="num" aria-hidden="true">${c.demoN}</span>
+        <span><b>${esc(c.demo.puesto)}</b><span>${esc(c.demo.zona)}, local ${c.num}</span></span>
+      </button></li>`).join("") : `<li class="vacio">Ningún puesto de Tlalamatl coincide. Prueba con otro producto.</li>`;
+  }
+
+  // Resalta en el plano la zona elegida o los puestos que coinciden con la búsqueda
+  function pintaResaltado() {
+    const buscando = !!estado.q.trim();
+    for (const r of document.querySelectorAll("#locales rect")) {
+      const num = +r.dataset.num;
+      const cel = porNum.get(num);
+      const fuera = (estado.zona !== null && cel.zona !== estado.zona) || (buscando && !(cel.demo && coincide(cel.demo)));
+      r.classList.toggle("apagado", fuera);
+      r.classList.toggle("elegido", num === estado.elegido);
+    }
+  }
+
+  function fila(dt, dd) { return dd ? `<dt>${dt}</dt><dd>${dd}</dd>` : ""; }
+
+  // Ficha del local (m3)
+  function pintaFicha() {
+    const box = $("#ficha");
+    const c = porNum.get(estado.elegido);
+    if (!c) { box.hidden = true; return; }
+    const z = plano.zonas[c.zona];
+    box.style.setProperty("--c", COLORES[c.zona % COLORES.length]);
+    const cerrar = `<button type="button" class="cerrar" id="cerrar" aria-label="Cerrar ficha"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>`;
+    if (!c.demo) {
+      box.innerHTML = `${cerrar}<span class="etiqueta">${esc(z.nombre)}</span><h3>Local ${c.num}</h3>
+        <p class="quien">Este local todavía no está en Tlalamatl.</p>
+        <p class="nota">Cuando su locatario se registre, aquí aparecerán su contacto y lo que vende.</p>`;
+    } else {
+      const d = c.demo;
+      box.innerHTML = `${cerrar}<span class="etiqueta">${esc(z.nombre)}</span>
+        <h3>${esc(d.puesto)}</h3>
+        <p class="quien">${esc(d.locatario)}, locatario</p>
+        <dl>${fila("Local", String(c.num))}${fila("Horario", esc(d.horario))}${fila("Teléfono", fmtTel(d.telefono))}</dl>
+        <div class="contacto">
+          <a class="accion principal" href="tel:${d.telefono}">Llamar</a>
+          ${d.whatsapp ? `<a class="accion wa" href="https://wa.me/52${d.whatsapp}" target="_blank" rel="noopener">WhatsApp</a>` : ""}
+        </div>
+        <table class="inventario">
+          <thead><tr><th>Inventario</th><th style="text-align:right">Precio</th></tr></thead>
+          <tbody>${d.inventario.map((i) => `<tr><td>${esc(i.producto)}</td><td class="precio">${pesos(i.precio)} <span class="unidad">/ ${esc(i.unidad)}</span></td></tr>`).join("")}</tbody>
+        </table>
+        <p class="nota">Locatario, teléfono e inventario ilustrativos. La compra se hace en persona, en el puesto.</p>`;
+    }
+    box.hidden = false;
+    $("#cerrar").addEventListener("click", () => { estado.elegido = null; pinta(); });
+  }
+
+  function pinta() { pintaZonas(); pintaPuestos(); pintaResaltado(); pintaFicha(); }
+
+  let porNum = new Map();
+  function abreMercado(id) {
+    estado.id = id; estado.zona = null; estado.elegido = null;
+    plano = PLANOS[id];
+    locales = generaLocales(plano);
+    porNum = new Map(locales.map((c) => [c.num, c]));
+    history.replaceState(null, "", `?mercado=${id}`);
+    pintaMercados(); pintaMercado(); dibujaPlano(); pinta();
+  }
+
+  function elegir(num, centrar) {
+    estado.elegido = num;
+    const c = porNum.get(num);
+    if (centrar && c) { const w = TODO.w / 4; vista = { x: c.cx - w / 2, y: c.cy - w / 2, w, h: w }; aplica(); }
+    pinta();
+    $("#ficha").scrollIntoView({ block: "nearest" });
+  }
+
+  // ---------- Eventos ----------
+  $("#mercados").addEventListener("click", (e) => { const b = e.target.closest("[data-id]"); if (b && b.dataset.id !== estado.id) { estado.q = ""; $("#q").value = ""; abreMercado(b.dataset.id); } });
+  svg.addEventListener("click", (e) => { const r = e.target.closest("rect[data-num]"); if (r && !movido) elegir(+r.dataset.num, false); });
+  $("#puestos").addEventListener("click", (e) => { const b = e.target.closest("[data-num]"); if (b) elegir(+b.dataset.num, true); });
+  $("#zonas").addEventListener("click", (e) => { const b = e.target.closest("[data-zona]"); if (!b) return; const z = +b.dataset.zona; estado.zona = estado.zona === z ? null : z; pinta(); });
+  $("#q").addEventListener("input", (e) => { estado.q = e.target.value; pinta(); });
+
+  abreMercado(estado.id);
+})();
+</script>
+</body>
+</html>

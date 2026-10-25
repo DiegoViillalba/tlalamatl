@@ -127,7 +127,7 @@ solicitada ──► confirmada ──► enviada ──► recibida
 
 1. **Mapa (`/`, público):** mapa con búsqueda, filtros (categoría, "abierto hoy") y lista por distancia. La navegación inferior tiene Mapa, Precios y Entrar (o "Mi espacio" si hay sesión). *Hecho: sin sesión muestra "Entrar" en el encabezado.*
 2. **Ficha interactiva (público):** hoja inferior sobre el mapa con los detalles del comercio o proveedor, sus productos con precio, sus comentarios y los botones **Llamar** y **WhatsApp**. Los botones "Favorito" y "Comentar" piden sesión. *Por hacer.*
-3. **Dashboard de precios (`/precios`, público):** productos de temporada y canasta básica, con precio mínimo y promedio por producto y dónde encontrarlo. Pestañas "Para comprar" y "Para vender" (proveedores y comerciantes). *Hecha.*
+3. **Dashboard de precios (`/precios`, público):** productos de temporada y canasta básica, con precio mínimo y promedio por producto y dónde encontrarlo. Pestañas "Para comprar" y "Para vender" (proveedores y comerciantes). Arriba, en "Para comprar", la **canasta de temporada**: gráfica de barras (más barato vs. promedio) con total en vivo, productos para agregar y quitar (se guarda en `localStorage`), y "Dónde comprar" agrupado por comercio con Llamar/WhatsApp. Al tocar un producto se abre su **historial** de 12 semanas (promedio y mínimo, menudeo o mayoreo, con la temporada marcada). *Hecha.*
 4. **Entrar (`/entrar`):** marca Tlalamatl y una tarjeta "Entrar como…" por rol, con sus usuarios demo y "Volver al mapa". *Hecha.* Las rutas de rol sin sesión redirigen aquí.
 5. **Layout de rol:** encabezado, contenido y navegación inferior (lo usan las 3 interfaces). *Hecho.*
 

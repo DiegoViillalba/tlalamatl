@@ -4,7 +4,7 @@ import type { PrecioProducto } from '@/api'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { CATEGORIAS, CATEGORIAS_PRODUCTO, MESES, pesos } from '@/lib/formato'
-import { BarraRango, Contacto } from './comunes'
+import { BarraRango, BotonHistorial, Contacto } from './comunes'
 
 /** Fracción que cuesta menos el mejor precio respecto al promedio (0 si solo hay un precio). */
 function ahorro(p: PrecioProducto) {
@@ -12,7 +12,15 @@ function ahorro(p: PrecioProducto) {
   return minimo != null && promedio ? (promedio - minimo) / promedio : 0
 }
 
-export function ResumenTemporada({ productos, mes, esActual }: { productos: PrecioProducto[]; mes: number; esActual: boolean }) {
+export function ResumenTemporada({
+  productos,
+  mes,
+  esActual,
+}: {
+  productos: PrecioProducto[]
+  mes: number
+  esActual: boolean
+}) {
   const mejores = productos
     .filter((p) => p.de_temporada && p.menudeo.n >= 2)
     .sort((a, b) => ahorro(b) - ahorro(a))
@@ -45,7 +53,13 @@ export function ResumenTemporada({ productos, mes, esActual }: { productos: Prec
   )
 }
 
-export function TarjetaComprar({ producto: p }: { producto: PrecioProducto }) {
+export function TarjetaComprar({
+  producto: p,
+  alVerHistorial,
+}: {
+  producto: PrecioProducto
+  alVerHistorial: () => void
+}) {
   const { menudeo, mas_barato_en: comercio } = p
   return (
     <Card size="sm">
@@ -90,6 +104,7 @@ export function TarjetaComprar({ producto: p }: { producto: PrecioProducto }) {
             <Contacto telefono={comercio.telefono} whatsapp={comercio.whatsapp} />
           </div>
         )}
+        <BotonHistorial nombre={p.nombre} alTocar={alVerHistorial} />
       </CardContent>
     </Card>
   )

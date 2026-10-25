@@ -36,7 +36,7 @@ Que una persona en la CDMX encuentre rápido qué tianguis, mercado o bodega de 
 
 ## Pantallas
 
-1. **Mapa, ficha y dashboard de precios (públicas):** ver `compartido.md`. Viven en `frontend/src/routes/publico/`. *Dashboard de precios hecho* (`/precios`, en `routes/publico/precios/`): pestañas "Para comprar" y "Para vender", filtros de temporada, canasta, categoría, mes y búsqueda, y contacto directo (Llamar / WhatsApp) del comercio más barato.
+1. **Mapa, ficha y dashboard de precios (públicas):** ver `compartido.md`. Viven en `frontend/src/routes/publico/`. *Dashboard de precios hecho* (`/precios`, en `routes/publico/precios/`): pestañas "Para comprar" y "Para vender", filtros de temporada, canasta, categoría, mes y búsqueda, y contacto directo (Llamar / WhatsApp) del comercio más barato. Incluye la canasta de temporada interactiva (agregar/quitar productos, total y ahorro en vivo, dónde comprar) y el historial de precios por producto.
 2. **Favoritos (`/cliente`):** pestañas "Cerca de mí" y "Mis favoritos". Es el inicio del cliente con sesión. *Por hacer.*
 3. **Mis comentarios (`/cliente/comentarios`):** lista de comentarios que dejé, con enlace a la ficha. *Por hacer.*
 

@@ -1,5 +1,5 @@
 // Piezas compartidas del dashboard de precios: contacto directo y barra de rango.
-import { MessageCircle, Phone } from 'lucide-react'
+import { ChartLine, MessageCircle, Phone } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { pesos } from '@/lib/formato'
 
@@ -52,5 +52,21 @@ export function BarraRango({ minimo, promedio, maximo }: { minimo: number; prome
         <span>Máx. {pesos(maximo)}</span>
       </div>
     </div>
+  )
+}
+
+/** Abre el historial de precios del producto. */
+export function BotonHistorial({ nombre, alTocar }: { nombre: string; alTocar: () => void }) {
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      className="-ml-2 h-7 px-2 text-xs text-muted-foreground"
+      onClick={alTocar}
+      aria-label={`Ver historial de precios de ${nombre}`}
+    >
+      <ChartLine />
+      Historial
+    </Button>
   )
 }

@@ -52,7 +52,7 @@ El login es un **demo sin contraseña**: eliges un usuario sembrado por rol. Sol
 
 ## Stack
 
-- **Backend:** Python, FastAPI, SQLModel, SQLite y pytest. Las máquinas de estado de órdenes y rutas se validan en el servidor; una transición inválida responde 409.
+- **Backend:** Python, FastAPI, SQLModel, Postgres (Supabase) o SQLite local, y pytest. Las máquinas de estado de órdenes y rutas se validan en el servidor; una transición inválida responde 409.
 - **Frontend:** Vite, React, TypeScript estricto, Tailwind v4, shadcn/ui, TanStack Query y React Router. Es mobile-first, todo en español de México y con pesos MXN. El cliente de la API se genera desde OpenAPI.
 - **Despliegue:** Vercel ([tlalamatl.vercel.app](https://tlalamatl.vercel.app/)).
 
@@ -90,7 +90,7 @@ Un solo proyecto de Vercel sirve las dos partes, configurado en `vercel.json`:
 
 - **Frontend:** `frontend/dist` como sitio estático. El build genera el cliente API en el servidor de Vercel (exporta el OpenAPI con `uv run` y corre `npm run gen-api`), igual que `make gen-api`.
 - **Backend:** `api/index.py` monta la app de FastAPI bajo `/api` como función Python. El frontend la consume con `VITE_API_URL=/api`, así que no hay CORS.
-- **Base de datos:** el disco de Vercel es efímero, así que la SQLite demo se siembra en `/tmp` en cada arranque en frío (`TLALAMATL_DB_PATH`). Favoritos y comentarios se pierden cuando la función se recicla: es un PoC.
+- **Base de datos:** la Postgres de Supabase, con `DATABASE_URL` en las variables de Vercel. Si falta, el disco de Vercel es efímero y se siembra una SQLite demo en `/tmp` en cada arranque en frío, perdiendo favoritos y comentarios.
 
 Variables de entorno en Vercel (Production): `VITE_API_URL=/api` y `TLALAMATL_SECRET`. Para el login por correo se agregan `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` y `SUPABASE_URL`.
 

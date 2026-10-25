@@ -8,7 +8,7 @@ from datetime import date, datetime
 from enum import Enum
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import UniqueConstraint
+from sqlalchemy import DateTime, UniqueConstraint
 from sqlalchemy.types import JSON, TypeDecorator
 from sqlmodel import Column, Field, Relationship, SQLModel
 
@@ -17,6 +17,10 @@ ZONA_CDMX = ZoneInfo("America/Mexico_City")
 
 def ahora() -> datetime:
     return datetime.now(ZONA_CDMX)
+
+
+# Columnas de fecha-hora con zona horaria (timestamptz en Postgres; en SQLite no cambia nada).
+FECHA_HORA = DateTime(timezone=True)
 
 
 # --- Enums ---------------------------------------------------------------------------
@@ -192,7 +196,7 @@ class Pedido(SQLModel, table=True):
     cliente_id: int = Field(foreign_key="usuario.id", index=True)
     comercio_id: int = Field(foreign_key="comercio.id", index=True)
     estado: EstadoPedido = EstadoPedido.creado
-    creado_en: datetime = Field(default_factory=ahora)
+    creado_en: datetime = Field(default_factory=ahora, sa_type=FECHA_HORA)
 
     items: list["PedidoItem"] = Relationship(back_populates="pedido")
 
@@ -214,7 +218,7 @@ class OrdenAbasto(SQLModel, table=True):
     comercio_id: int = Field(foreign_key="comercio.id", index=True)
     proveedor_id: int = Field(foreign_key="proveedor.id", index=True)
     estado: EstadoOrden = EstadoOrden.solicitada
-    creado_en: datetime = Field(default_factory=ahora)
+    creado_en: datetime = Field(default_factory=ahora, sa_type=FECHA_HORA)
     # Ruta de entrega compartida a la que pertenece la orden (None = entrega por separado).
     ruta_id: int | None = Field(default=None, foreign_key="rutaentrega.id", index=True)
 
@@ -248,7 +252,7 @@ class RutaEntrega(SQLModel, table=True):
     costo_flete: float = 0  # costo total del viaje, en MXN
     nota: str | None = None
     estado: EstadoRuta = EstadoRuta.abierta
-    creado_en: datetime = Field(default_factory=ahora)
+    creado_en: datetime = Field(default_factory=ahora, sa_type=FECHA_HORA)
 
 
 class SolicitudFlete(SQLModel, table=True):
@@ -259,7 +263,7 @@ class SolicitudFlete(SQLModel, table=True):
     comercio_id: int = Field(foreign_key="comercio.id", index=True)
     orden_id: int = Field(foreign_key="ordenabasto.id", index=True)
     estado: EstadoSolicitudFlete = EstadoSolicitudFlete.pendiente
-    creado_en: datetime = Field(default_factory=ahora)
+    creado_en: datetime = Field(default_factory=ahora, sa_type=FECHA_HORA)
 
 
 class Favorito(SQLModel, table=True):
@@ -270,7 +274,7 @@ class Favorito(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     usuario_id: int = Field(foreign_key="usuario.id", index=True)
     comercio_id: int = Field(foreign_key="comercio.id", index=True)
-    creado_en: datetime = Field(default_factory=ahora)
+    creado_en: datetime = Field(default_factory=ahora, sa_type=FECHA_HORA)
 
 
 class Comentario(SQLModel, table=True):
@@ -280,7 +284,7 @@ class Comentario(SQLModel, table=True):
     usuario_id: int = Field(foreign_key="usuario.id", index=True)
     comercio_id: int = Field(foreign_key="comercio.id", index=True)
     texto: str = Field(max_length=500)
-    creado_en: datetime = Field(default_factory=ahora)
+    creado_en: datetime = Field(default_factory=ahora, sa_type=FECHA_HORA)
 
 
 # --- Esquemas de lectura compartidos (respuestas con items anidados) -----------------

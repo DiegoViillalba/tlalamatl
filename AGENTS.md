@@ -71,11 +71,11 @@ tlalamatl/
 ├── AGENTS.md / CLAUDE.md        # este archivo (CLAUDE.md solo hace @AGENTS.md)
 ├── Makefile                     # install, seed, dev, gen-api, test, check
 ├── docs/alcance/                # alcance por interfaz: cliente, comercio, proveedor, compartido
-├── backend/                     # Python 3.12 · uv · FastAPI · SQLModel · SQLite · pytest
+├── backend/                     # Python 3.12 · uv · FastAPI · SQLModel · Postgres (Supabase) / SQLite · pytest
 │   ├── app/
 │   │   ├── main.py              # app + registro de routers (ya están los 5)
 │   │   ├── models.py            # modelo de datos (fuente única de verdad)
-│   │   ├── db.py · auth.py      # sesión SQLite · JWT demo + require_rol()
+│   │   ├── db.py · auth.py      # engine (DATABASE_URL → Postgres; sin ella SQLite) · JWT demo + require_rol()
 │   │   ├── estados.py           # máquinas de estado
 │   │   └── routers/             # auth, publico, cliente, comercio, proveedor
 │   ├── seed.py                  # datos demo CDMX (idempotente)
@@ -145,7 +145,7 @@ Debe salir vacío. En la rama `rol/cliente` excluye también `publico.py` y `tes
 - **Usa componentes shadcn** (`@/components/ui/*`) antes de crear propios.
 - **Tests:** cada rol agrega los suyos en `backend/tests/test_<rol>.py`, usando las fixtures `client` y `login` de `conftest.py`.
 - **No es e-commerce:** no agregues carrito, pagos, pedidos ni inventario con stock sin acordarlo; el modelo todavía trae `Pedido` y `stock` del andamiaje, pero están fuera del MVP.
-- **Simplicidad:** sin Docker, Postgres ni librerías fuera del stack sin acordarlo. La única auth real es el login por correo de Supabase (ver `compartido.md`); Supabase solo autentica, los datos siguen en SQLite. Código simple y legible, sin abstracciones prematuras. UI en español y mobile-first.
+- **Simplicidad:** sin Docker, Postgres ni librerías fuera del stack sin acordarlo. La única auth real es el login por correo de Supabase (ver `compartido.md`). Los datos viven en la Postgres de Supabase (`DATABASE_URL` en `backend/.env`); sin esa variable el backend usa una SQLite local, útil para desarrollo aislado y para los tests. Código simple y legible, sin abstracciones prematuras. UI en español y mobile-first.
 
 ## Comandos
 

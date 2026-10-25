@@ -1,7 +1,8 @@
 """Punto de entrada para Vercel: expone la API de FastAPI bajo /api como función serverless.
 
-El disco de Vercel es efímero y de solo lectura salvo /tmp, así que la base SQLite demo se siembra
-en /tmp en cada arranque en frío. Favoritos y comentarios se pierden al reciclarse la función: es un PoC.
+Con `DATABASE_URL` (Postgres de Supabase) la base es compartida y persistente. Sin ella, el disco de
+Vercel es efímero y de solo lectura salvo /tmp, así que se siembra una SQLite demo en /tmp en cada
+arranque en frío (favoritos y comentarios se pierden al reciclarse la función).
 """
 
 import os
@@ -21,7 +22,7 @@ from app.main import app as api  # noqa: E402
 
 
 def sembrar_si_hace_falta() -> None:
-    if DB_PATH.exists():
+    if os.getenv("DATABASE_URL") or DB_PATH.exists():
         return
     import seed
 

@@ -31,7 +31,7 @@ Que productores, mayoristas y almacenes publiquen sus ofertas de mayoreo, atiend
 ## Pantallas
 
 1. **Órdenes (`/proveedor`):** tarjeta de perfil (solo lectura, con Llamar y WhatsApp) y órdenes en pestañas Nuevas, Por enviar, Enviadas e Historial. Cada orden muestra items, total, contacto del comercio y solo las acciones válidas (confirmar o rechazar una nueva; enviar una confirmada). *Hecha.*
-2. **Mis ofertas (`/proveedor/ofertas`):** lista, alta y edición en un diálogo, cambio rápido de disponible y eliminación con confirmación. *Hecha.*
+2. **Mis ofertas (`/proveedor/ofertas`):** lista, alta y edición en un diálogo, cambio rápido de disponible y eliminación con confirmación. Cada oferta muestra una foto ilustrativa (`ImagenProducto`, con créditos al pie) y el formulario la previsualiza según el nombre; también aparece junto a cada producto de las órdenes. *Hecha.*
 3. **Mis compradores (`/proveedor/compradores`):** comercios activos con su categoría, alcaldía, número de órdenes, última orden y contacto. *Hecha.*
 4. **Rutas (`/proveedor/rutas`):** pestaña *Sugeridas* (órdenes confirmadas agrupadas por alcaldía, con "Armar ruta": elige órdenes, día y costo del flete, y ve el flete por comercio en vivo) y pestaña *Mis rutas* (paradas con su subtotal y su cuota de flete, contacto, solicitudes de comercios que quieren sumarse con Aceptar/Rechazar, y las acciones Salir en camino, Cancelar y Marcar completada). *Hecha.*
 

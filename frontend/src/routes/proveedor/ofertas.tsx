@@ -11,6 +11,7 @@ import {
   proveedorListarOfertasQueryKey,
 } from '@/api/@tanstack/react-query.gen'
 import { Encabezado } from '@/components/encabezado'
+import { CreditosImagenes, ImagenProducto } from '@/components/imagen-producto'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -47,6 +48,7 @@ export function MisOfertas() {
         {ofertas.data?.map((oferta) => (
           <TarjetaOferta key={oferta.id} oferta={oferta} onEditar={() => setEdicion(oferta)} />
         ))}
+        {ofertas.data && <CreditosImagenes nombres={ofertas.data.map((o) => o.producto)} />}
       </div>
 
       <FormularioOferta edicion={edicion} onCerrar={() => setEdicion(null)} />
@@ -82,8 +84,9 @@ function TarjetaOferta({ oferta, onEditar }: { oferta: OfertaProveedor; onEditar
   return (
     <Card className={oferta.disponible ? undefined : 'opacity-70'}>
       <CardContent className="space-y-3">
-        <div className="flex items-start justify-between gap-2">
-          <div>
+        <div className="flex items-start gap-3">
+          <ImagenProducto nombre={oferta.producto} className="size-16" />
+          <div className="min-w-0 flex-1">
             <p className="font-medium">{oferta.producto}</p>
             <p className="text-sm text-muted-foreground">
               {pesos(oferta.precio_mayoreo)} por {oferta.unidad} · mínimo {oferta.cantidad_minima} {oferta.unidad}
@@ -130,6 +133,13 @@ function TarjetaOferta({ oferta, onEditar }: { oferta: OfertaProveedor; onEditar
 function FormularioOferta({ edicion, onCerrar }: { edicion: Edicion; onCerrar: () => void }) {
   const oferta = edicion && edicion !== 'nueva' ? edicion : null
   const refrescar = useRefrescarOfertas()
+  const [nombre, setNombre] = useState('')
+  // Al abrir otra oferta (o una nueva), el campo parte del nombre de esa oferta.
+  const [abierta, setAbierta] = useState<Edicion>(null)
+  if (edicion !== abierta) {
+    setAbierta(edicion)
+    setNombre(oferta?.producto ?? '')
+  }
 
   const crear = useMutation(proveedorCrearOfertaMutation())
   const actualizar = useMutation(proveedorActualizarOfertaMutation())
@@ -168,7 +178,18 @@ function FormularioOferta({ edicion, onCerrar }: { edicion: Edicion; onCerrar: (
         <form key={oferta?.id ?? 'nueva'} onSubmit={guardar} className="space-y-3">
           <div className="space-y-1.5">
             <Label htmlFor="producto">Producto</Label>
-            <Input id="producto" name="producto" required defaultValue={oferta?.producto} placeholder="Jitomate saladet" />
+            <div className="flex items-center gap-3">
+              <ImagenProducto nombre={nombre} className="size-12" />
+              <Input
+                id="producto"
+                name="producto"
+                required
+                value={nombre}
+                onChange={(e) => setNombre(e.target.value)}
+                placeholder="Jitomate saladet"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">Foto ilustrativa que verán los comercios, según el nombre.</p>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">

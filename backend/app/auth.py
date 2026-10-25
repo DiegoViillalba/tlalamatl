@@ -11,6 +11,7 @@ import jwt
 from dotenv import load_dotenv
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from sqlalchemy import func
 from sqlmodel import select
 
 from app.db import SessionDep
@@ -88,6 +89,19 @@ ClaimsActuales = Annotated[Claims, Depends(claims_actuales)]
 def usuario_actual(session: SessionDep, claims: ClaimsActuales) -> Usuario:
     if es_de_supabase(claims):
         usuario = session.exec(select(Usuario).where(Usuario.auth_id == claims["sub"])).first()
+        if usuario is None:
+            # Cold start on a different serverless instance: re-link by email so the user isn't logged out.
+            email = (claims.get("email") or "").strip().lower()
+            if not email:
+                raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Usuario no existe")
+            usuario = session.exec(select(Usuario).where(func.lower(Usuario.email) == email)).first()
+            if usuario is None:
+                usuario = Usuario(nombre=email.split("@")[0], email=email, rol=Rol.cliente, alcaldia="")
+                session.add(usuario)
+            usuario.auth_id = claims["sub"]
+            session.add(usuario)
+            session.commit()
+            session.refresh(usuario)
     else:
         usuario = session.get(Usuario, int(claims["sub"]))
     if usuario is None:

@@ -8,8 +8,10 @@ client.setConfig({
 })
 
 // Token vencido o usuario borrado (p. ej. tras `make seed`): volver a la pantalla de entrada.
+// Para sesiones Supabase el SDK gestiona la expiración vía onAuthStateChange; no cerrar sesión aquí.
 client.interceptors.response.use((respuesta) => {
-  if (respuesta.status === 401 && obtenerSesion()) cerrarSesion()
+  const sesion = obtenerSesion()
+  if (respuesta.status === 401 && sesion && sesion.origen !== 'supabase') cerrarSesion()
   return respuesta
 })
 

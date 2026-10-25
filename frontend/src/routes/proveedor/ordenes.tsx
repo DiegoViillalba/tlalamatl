@@ -9,6 +9,7 @@ import {
 } from '@/api/@tanstack/react-query.gen'
 import { Encabezado } from '@/components/encabezado'
 import { EstadoOrdenBadge } from '@/components/estado-badge'
+import { ImagenProducto } from '@/components/imagen-producto'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -123,8 +124,9 @@ function TarjetaOrden({ orden }: { orden: OrdenRecibida }) {
       <CardContent className="space-y-3">
         <ul className="space-y-1 text-sm">
           {orden.items.map((item) => (
-            <li key={item.id} className="flex justify-between gap-2">
-              <span>
+            <li key={item.id} className="flex items-center justify-between gap-2">
+              <span className="flex items-center gap-2">
+                <ImagenProducto nombre={item.producto} className="size-8" />
                 {item.producto} · {item.cantidad} {item.unidad}
               </span>
               <span className="text-muted-foreground">{pesos(item.cantidad * item.precio_unitario)}</span>

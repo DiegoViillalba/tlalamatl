@@ -1,10 +1,12 @@
 """Catálogo público de comercios y productos (sin login). Dueña: rama rol/cliente."""
 
+from datetime import datetime
+
 from fastapi import APIRouter, HTTPException
 from sqlmodel import SQLModel, select
 
 from app.db import SessionDep
-from app.models import Categoria, Comercio, Dia, Producto
+from app.models import Categoria, Comentario, Comercio, Dia, Producto, Usuario
 
 router = APIRouter(prefix="/publico", tags=["publico"])
 
@@ -22,6 +24,13 @@ class ComercioPublico(SQLModel):
     # Contacto directo para los botones Llamar y WhatsApp de la ficha pública.
     telefono: str | None
     whatsapp: str | None
+
+
+class ComentarioPublico(SQLModel):
+    id: int
+    nombre_usuario: str
+    texto: str
+    creado_en: datetime
 
 
 def a_publico(comercio: Comercio, hoy: Dia) -> ComercioPublico:
@@ -63,3 +72,24 @@ def listar_productos(comercio_id: int, session: SessionDep) -> list[Producto]:
     return list(
         session.exec(select(Producto).where(Producto.comercio_id == comercio_id).order_by(Producto.nombre))
     )
+
+
+@router.get("/comercios/{comercio_id}/comentarios", response_model=list[ComentarioPublico])
+def listar_comentarios(comercio_id: int, session: SessionDep) -> list[ComentarioPublico]:
+    if session.get(Comercio, comercio_id) is None:
+        raise HTTPException(404, "Comercio no encontrado")
+    filas = session.exec(
+        select(Comentario, Usuario.nombre)
+        .join(Usuario, Usuario.id == Comentario.usuario_id)
+        .where(Comentario.comercio_id == comercio_id)
+        .order_by(Comentario.creado_en.desc(), Comentario.id.desc())
+    ).all()
+    return [
+        ComentarioPublico(
+            id=comentario.id,
+            nombre_usuario=nombre,
+            texto=comentario.texto,
+            creado_en=comentario.creado_en,
+        )
+        for comentario, nombre in filas
+    ]

@@ -1,4 +1,5 @@
 from tests.conftest import HOY
+from app.models import Rol
 
 
 def test_filtro_abierto_hoy(client):
@@ -35,3 +36,19 @@ def test_comercios_exponen_contacto(client):
     assert any(c["whatsapp"] is None for c in comercios)
     unico = client.get(f"/publico/comercios/{comercios[0]['id']}").json()
     assert unico["telefono"] == comercios[0]["telefono"]
+
+
+def test_comentarios_publicos_sin_login(client, login):
+    comercio = client.get("/publico/comercios").json()[0]
+    creado = client.post(
+        f"/cliente/comercios/{comercio['id']}/comentarios",
+        headers=login(Rol.cliente),
+        json={"texto": "Buen lugar"},
+    ).json()
+
+    respuesta = client.get(f"/publico/comercios/{comercio['id']}/comentarios")
+    assert respuesta.status_code == 200
+    comentario = next(item for item in respuesta.json() if item["id"] == creado["id"])
+    assert comentario["texto"] == "Buen lugar"
+    assert comentario["nombre_usuario"]
+    assert client.get("/publico/comercios/9999/comentarios").status_code == 404

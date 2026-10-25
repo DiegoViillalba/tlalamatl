@@ -81,6 +81,29 @@ make dev       # API en http://localhost:8000 (docs en /docs) y app en http://lo
 | `make test` | Corre pytest |
 | `make gen-api` | Regenera `frontend/src/api/` después de cambiar el backend |
 | `make check` | Corre todo lo anterior más typecheck y build (antes de mergear) |
+| `make deploy` | Despliega a producción en Vercel (ver abajo) |
+
+### Desplegar en Vercel
+
+Un solo proyecto de Vercel sirve las dos partes, configurado en `vercel.json`:
+
+- **Frontend:** `frontend/dist` como sitio estático. El build genera el cliente API en el servidor de Vercel (exporta el OpenAPI con `uv run` y corre `npm run gen-api`), igual que `make gen-api`.
+- **Backend:** `api/index.py` monta la app de FastAPI bajo `/api` como función Python. El frontend la consume con `VITE_API_URL=/api`, así que no hay CORS.
+- **Base de datos:** el disco de Vercel es efímero, así que la SQLite demo se siembra en `/tmp` en cada arranque en frío (`TLALAMATL_DB_PATH`). Favoritos y comentarios se pierden cuando la función se recicla: es un PoC.
+
+Variables de entorno en Vercel (Production): `VITE_API_URL=/api` y `TLALAMATL_SECRET`. Para el login por correo se agregan `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` y `SUPABASE_URL`.
+
+```bash
+make deploy   # con la CLI de Vercel ya autenticada (npx vercel@latest login) y el proyecto enlazado (.vercel/)
+```
+
+`make deploy` despliega desde una copia del repo sin `.git`. Hace falta porque en el plan Hobby Vercel bloquea los despliegues cuyo autor del commit no es el dueño de la cuenta, y el equipo hace commits con varias cuentas.
+
+Al cambiar dependencias del backend, regenera `requirements.txt` (lo lee Vercel):
+
+```bash
+cd backend && uv export --no-dev --no-hashes --no-emit-project --no-editable -o ../requirements.txt
+```
 
 ### Cómo trabajamos
 

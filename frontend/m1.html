@@ -1,0 +1,834 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tlalamatl</title>
+<link rel="icon" href="img/isotipo.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* Identidad oficial de la Ciudad (decisiones 0001 y 0002): guinda institucional, rosa del contorno
+     y paleta plana del corazón de la CDMX. */
+  :root {
+    --guinda: #9f2241;
+    --guinda-osc: #771a31;
+    --rosa: #f598c6;
+    --rosa-borde: #dc6fc0;
+    --rosa-claro: #fde3ef;
+    --tinta: #231f20;
+    --tenue: #5f5a5c;
+    --linea: #e7e1e3;
+    --blanco: #ffffff;
+    --foco: #1f6fd1;
+
+    /* Un color por tipo de mercado, tomados de la ilustración oficial */
+    --c-ca: #e8203a;  /* rojo del corazón */
+    --c-mp: #3f8a46;  /* verde del nopal */
+    --c-tq: #1f6fd1;  /* azul del colibrí */
+    --c-mr: #e2780c;  /* naranja del cempasúchil */
+
+    /* antipatrón permitido: radio redondeado, porque es el lenguaje de App CDMX (decisión 0001) */
+    --radio: 14px;
+    --radio-chico: 10px;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; background: var(--blanco); color: var(--tinta);
+    font: 15px/1.45 Montserrat, system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-variant-numeric: tabular-nums;
+  }
+  button, input { font: inherit; color: inherit; }
+  :focus-visible { outline: 3px solid var(--foco); outline-offset: 2px; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  svg.ico { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* ---------- Barra superior ---------- */
+  .barra {
+    background: var(--guinda); color: var(--blanco);
+    padding: 10px 16px; padding-top: max(10px, env(safe-area-inset-top));
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 12px;
+  }
+  .barra > * { min-width: 0; }
+  /* Isotipo | nombre, como el sello del Tren Maya. El isotipo se pinta con máscara para tomar el color del texto. */
+  .marca { display: flex; align-items: center; gap: 12px; color: var(--blanco); text-decoration: none; }
+  .isotipo {
+    width: 44px; height: 44px; flex: none; background: currentColor;
+    -webkit-mask: url(img/isotipo.svg) center / contain no-repeat; mask: url(img/isotipo.svg) center / contain no-repeat;
+  }
+  .marca .divisor { width: 1.5px; align-self: stretch; background: currentColor; opacity: .6; margin: 4px 0; }
+  .marca b { display: block; font-size: 21px; font-weight: 800; letter-spacing: .06em; line-height: 1; }
+  .marca .lema { display: block; font-size: 11px; font-weight: 600; letter-spacing: .02em; opacity: .9; margin-top: 3px; }
+  /* Greca de la banda, como el friso del sello del Tren Maya */
+  .greca {
+    height: 12px; background-color: var(--guinda-osc);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='12'%3E%3Cg fill='none' stroke='%23f598c6' stroke-width='1.6'%3E%3Cpath d='M0 9.5H5V4H11V9.5H16'/%3E%3Cpath d='M21 3.5v6M25 3.5v6M29 3.5v6M33 3.5v6'/%3E%3C/g%3E%3C/svg%3E");
+    background-repeat: repeat-x; background-position: center;
+  }
+
+  /* Iniciar sesión: silueta corporal blanca, contorno blanco de borde recto sobre el guinda */
+  .ingresar {
+    display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 6px 12px 6px 8px;
+    background: transparent; color: var(--blanco); border: 1.5px solid var(--blanco); border-radius: 0;
+    font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap;
+  }
+  .ingresar:hover { background: var(--guinda-osc); }
+  .silueta { width: 22px; height: 22px; fill: var(--blanco); flex: none; }
+
+  /* ---------- Barra de filtros: texto con flecha que abre un desplegable (patrón de 100 Fondas) ---------- */
+  .filtros { background: var(--rosa); position: relative; z-index: 20; }
+  .barra-filtros { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; padding: 8px 16px; }
+  .desplegables { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; }
+  .desp { position: relative; }
+  .dbtn {
+    display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 6px 12px;
+    border: 0; background: transparent; color: var(--guinda-osc); font-weight: 800; font-size: 15px; cursor: pointer; white-space: nowrap;
+  }
+  .dbtn:hover, .dbtn[aria-expanded="true"] { background: rgba(255,255,255,.5); }
+  .dbtn .valor { font-weight: 600; }
+  .dbtn .valor:not(:empty)::before { content: ": "; }
+  .caret { width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 6px solid currentColor; }
+  .dbtn[aria-expanded="true"] .caret { transform: rotate(180deg); }
+  .casilla { width: 18px; height: 18px; border: 2px solid currentColor; display: grid; place-items: center; flex: none; }
+  .casilla svg { width: 12px; height: 12px; fill: none; stroke: var(--blanco); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+  .dbtn[aria-pressed="true"] .casilla { background: var(--guinda-osc); }
+  .dbtn[aria-pressed="false"] .casilla svg { visibility: hidden; }
+  .limpiar { border: 0; background: none; color: var(--guinda-osc); font-size: 13px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; min-height: 44px; padding: 0 8px; }
+  .limpiar[hidden] { display: none; }
+  .dpop {
+    position: absolute; left: 0; top: 100%; margin-top: 4px; z-index: 30; background: var(--blanco); color: var(--tinta);
+    border: 2px solid var(--guinda-osc); box-shadow: 6px 6px 0 var(--guinda); padding: 12px; min-width: 260px; max-height: 70vh; overflow: auto;
+  }
+  .dpop[hidden] { display: none; }
+  .dpop--alc { width: min(640px, 92vw); display: grid; grid-template-columns: 240px 1fr; gap: 16px; }
+  .dpop .titulo { font-size: 13px; font-weight: 700; color: var(--guinda-osc); margin: 0 0 6px; }
+  .nota-pop { font-size: 12px; color: var(--tenue); margin: 8px 0 0; max-width: 300px; }
+  .opciones { list-style: none; margin: 0; padding: 0; }
+  .opciones--cols { columns: 2 180px; column-gap: 12px; }
+  .opciones li { break-inside: avoid; }
+  .opcion {
+    display: flex; align-items: center; gap: 10px; width: 100%; min-height: 34px; padding: 4px 8px;
+    border: 0; background: none; text-align: left; cursor: pointer; font-size: 14px; color: var(--tinta);
+  }
+  .opcion:hover { background: var(--rosa-claro); }
+  .opcion[aria-pressed="true"] { font-weight: 800; color: var(--guinda-osc); background: var(--rosa-claro); }
+  .opcion .n { margin-left: auto; padding-left: 8px; color: var(--tenue); font-weight: 500; }
+  .opcion:disabled { opacity: .45; cursor: default; background: none; }
+  .opcion .forma { width: 13px; height: 13px; fill: var(--c); flex: none; }
+  .mini { width: 100%; height: auto; display: block; }
+  .mini path { stroke: var(--blanco); stroke-width: 1.5; vector-effect: non-scaling-stroke; cursor: pointer; }
+  .mini path:hover, .mini path:focus-visible { stroke: var(--tinta); stroke-width: 2; outline: none; }
+  .mini path.elegida { stroke: var(--tinta); stroke-width: 3; }
+  .buscar {
+    display: flex; align-items: center; gap: 10px; background: var(--blanco); border-radius: var(--radio);
+    padding: 0 6px 0 12px; min-height: 44px; color: var(--tenue); margin-left: auto; flex: 1 1 260px; max-width: 420px;
+  }
+  .buscar input { border: 0; outline: 0; flex: 1; min-width: 0; height: 42px; background: transparent; color: var(--tinta); }
+  .buscar:focus-within { outline: 3px solid var(--foco); outline-offset: 2px; }
+  .ubicar {
+    border: 0; background: var(--guinda); color: var(--blanco); border-radius: var(--radio-chico);
+    width: 34px; height: 34px; display: grid; place-items: center; cursor: pointer; flex: none;
+  }
+  .alcaldia.apagada { fill: var(--blanco); }
+  .nombre-alc.apagada { opacity: .3; }
+  @media (max-width: 640px) {
+    /* En teléfono el desplegable ocupa el ancho de la barra */
+    .desp { position: static; }
+    .dpop { left: 8px; right: 8px; min-width: 0; }
+    .dpop--alc { width: auto; grid-template-columns: 1fr; }
+    .mini { max-width: 220px; margin: 0 auto; }
+    .buscar { margin-left: 0; max-width: none; }
+  }
+
+  /* ---------- Mapa estilizado ---------- */
+  .cuerpo { display: flex; flex-direction: column; }
+  .mapa-caja { position: relative; height: min(62vh, 138vw); min-height: 340px; background: var(--blanco); overflow: hidden; }
+  #mapa { width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
+  #mapa.arrastrando { cursor: grabbing; }
+  .alcaldia { stroke: var(--blanco); stroke-width: 3; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+  .contorno { fill: var(--rosa-borde); stroke: var(--rosa-borde); stroke-width: 14; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+  .nombre-alc { font-size: 15px; font-weight: 700; fill: #6d5a63; text-anchor: middle; pointer-events: none; paint-order: stroke; stroke: rgba(255,255,255,.8); stroke-width: 3px; }
+  .punto { fill: var(--c); stroke: var(--blanco); cursor: pointer; }
+  .pin.destacado .gota { stroke: var(--guinda-osc); stroke-width: 3; }
+  .ir-croquis { cursor: pointer; }
+  .ir-croquis rect { fill: var(--guinda); stroke: var(--blanco); stroke-width: 1.5; }
+  .ir-croquis:hover rect, .ir-croquis:focus-visible rect { fill: var(--guinda-osc); }
+  .ir-croquis:focus-visible { outline: none; }
+  .ir-croquis:focus-visible rect { stroke: var(--foco); stroke-width: 3; }
+  .ir-croquis text { fill: var(--blanco); font-size: 12.5px; font-weight: 600; }
+  .ir-croquis .corto { font-weight: 800; }
+  .ir-croquis .chevron { fill: none; stroke: var(--blanco); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .pin { cursor: pointer; }
+  .pin .gota { fill: var(--c); stroke: var(--blanco); stroke-width: 2.5; }
+  .pin .simbolo { fill: var(--blanco); }
+  .pin.activo .gota { stroke: var(--tinta); stroke-width: 3; }
+  .pin:focus-visible { outline: none; }
+  .pin:focus-visible .gota { stroke: var(--foco); stroke-width: 4; }
+  .yo-punto { fill: var(--foco); stroke: var(--blanco); stroke-width: 3; }
+  .yo-halo { fill: none; stroke: var(--foco); stroke-width: 2; }
+  .radio-prov { fill: var(--rosa); fill-opacity: .25; stroke: var(--guinda); stroke-width: 2; stroke-dasharray: 6 5; vector-effect: non-scaling-stroke; }
+
+  .zoom { position: absolute; right: 12px; bottom: 12px; display: flex; flex-direction: column; gap: 6px; }
+  .zoom button {
+    width: 44px; height: 44px; border-radius: var(--radio-chico); border: 1px solid var(--linea);
+    background: var(--blanco); color: var(--guinda); display: grid; place-items: center; cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0,0,0,.15);
+  }
+  .simbologia {
+    position: absolute; left: 12px; bottom: 12px; background: rgba(255,255,255,.94); border-radius: var(--radio-chico);
+    padding: 8px 10px; font-size: 12px; border: 1px solid var(--linea);
+  }
+  .simbologia b { display: block; font-size: 12px; margin-bottom: 4px; }
+  .simbologia ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; }
+  .simbologia li { display: flex; align-items: center; gap: 6px; }
+  .simbologia svg { width: 12px; height: 12px; }
+
+  /* ---------- Panel ---------- */
+  .panel { padding: 16px; }
+  .croquis { margin-bottom: 14px; }
+  .croquis h2 { margin-top: 0; }
+  .croquis-botones { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .croquis-btn { justify-content: space-between; padding: 8px 10px; }
+  .croquis-btn .sub { display: block; font-size: 12px; font-weight: 500; color: var(--tenue); }
+  .resumen { background: var(--rosa-claro); border-radius: var(--radio); padding: 14px 16px; margin-bottom: 14px; }
+  .resumen strong { display: block; font-size: 15px; font-weight: 700; color: var(--guinda-osc); }
+  .resumen span { font-size: 13px; color: var(--tenue); }
+  .panel h2 { font-size: 16px; font-weight: 700; margin: 4px 0 10px; }
+  .lista { list-style: none; margin: 0; padding: 0; }
+  .item {
+    display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; width: 100%;
+    text-align: left; background: var(--blanco); border: 1px solid var(--linea); border-radius: var(--radio);
+    padding: 12px 14px; margin-bottom: 8px; cursor: pointer; min-height: 64px;
+  }
+  .item:hover { border-color: var(--rosa); }
+  .item[aria-current="true"] { border-color: var(--guinda); box-shadow: inset 0 0 0 1px var(--guinda); }
+  .item .icono-tipo { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; background: var(--c); }
+  .item .icono-tipo svg { width: 16px; height: 16px; fill: var(--blanco); }
+  .item .nombre { font-weight: 700; font-size: 15px; line-height: 1.25; }
+  .item .meta { font-size: 13px; color: var(--tenue); }
+  .item .km { font-weight: 700; color: var(--guinda); font-size: 15px; white-space: nowrap; }
+  .vacio { color: var(--tenue); padding: 12px 0; }
+  .accion.mas { width: 100%; justify-content: center; }
+  .panel h2 .cuenta { font-weight: 500; color: var(--tenue); }
+  .detalle .estado-hoy { display: inline-block; margin-top: 2px; font-size: 13px; font-weight: 700; color: var(--tenue); }
+  .detalle .estado-hoy.abierto { color: var(--c-mp); }
+  .detalle .nota { display: block; font-size: 12px; font-weight: 400; color: var(--tenue); }
+  .detalle .fuente { margin: 12px 0 0; font-size: 12px; color: var(--tenue); }
+
+  .detalle { border-radius: var(--radio); background: var(--blanco); border: 1px solid var(--linea); padding: 16px; margin-bottom: 14px; }
+  .detalle[hidden] { display: none; }
+  .detalle .etiqueta { display: inline-block; font-size: 12px; font-weight: 700; color: var(--blanco); background: var(--c); border-radius: 8px; padding: 3px 10px; }
+  .detalle h3 { margin: 10px 0 4px; font-size: 19px; font-weight: 800; line-height: 1.2; }
+  .detalle dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; margin: 10px 0 14px; font-size: 14px; }
+  .detalle dt { color: var(--tenue); }
+  .detalle dd { margin: 0; font-weight: 600; }
+  .acciones { display: flex; gap: 8px; flex-wrap: wrap; }
+  .accion {
+    display: inline-flex; align-items: center; gap: 8px; text-decoration: none; cursor: pointer;
+    border-radius: var(--radio-chico); padding: 10px 14px; min-height: 44px; font-weight: 700; font-size: 14px;
+    border: 2px solid var(--guinda); color: var(--guinda); background: var(--blanco);
+  }
+  .accion.principal { background: var(--guinda); color: var(--blanco); }
+  .accion[aria-disabled="true"] { border-color: var(--linea); color: var(--tenue); cursor: not-allowed; }
+  .cerrar-detalle { float: right; border: 0; background: transparent; color: var(--tenue); width: 44px; height: 44px; margin: -10px -10px 0 0; display: grid; place-items: center; cursor: pointer; }
+  .pie { padding: 4px 16px 24px; font-size: 12px; color: var(--tenue); }
+
+  @media (max-width: 420px) {
+    .ingresar span { display: none; }
+    .ingresar { padding: 6px; min-width: 40px; justify-content: center; }
+    .marca .lema { font-size: 10px; }
+    .isotipo { width: 38px; height: 38px; }
+    .marca b { font-size: 19px; }
+  }
+  @media (min-width: 900px) {
+    body { display: grid; grid-template-rows: auto auto auto 1fr; height: 100vh; }
+    .cuerpo { flex-direction: row-reverse; min-height: 0; }
+    .mapa-caja { height: auto; flex: 1; }
+    .lado { width: 400px; flex: none; overflow-y: auto; border-right: 1px solid var(--linea); display: flex; flex-direction: column; }
+    .panel { flex: 1; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Forma por tipo: el color no es la única pista -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="f-ca" viewBox="0 0 16 16"><rect x="2" y="2" width="12" height="12" rx="1"/></symbol>
+  <symbol id="f-mp" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.5"/></symbol>
+  <symbol id="f-tq" viewBox="0 0 16 16"><path d="M8 1 15 8 8 15 1 8z"/></symbol>
+  <symbol id="f-mr" viewBox="0 0 16 16"><path d="M8 1.5 15 14.5H1z"/></symbol>
+</svg>
+
+<header class="barra">
+  <a class="marca" href="m1.html" aria-label="TLALAMATL, inicio">
+    <span class="isotipo" aria-hidden="true"></span>
+    <span class="divisor" aria-hidden="true"></span>
+    <span><b>TLALAMATL</b><span class="lema">Mercados de la Ciudad de México</span></span>
+  </a>
+  <button type="button" class="ingresar" id="ingresar" aria-label="Iniciar sesión">
+    <svg viewBox="0 0 24 24" aria-hidden="true" class="silueta"><circle cx="12" cy="6.5" r="4"/><path d="M4 22v-3.2C4 14.9 7.6 12.5 12 12.5s8 2.4 8 6.3V22z"/></svg>
+    <span>Iniciar sesión</span>
+  </button>
+</header>
+<div class="greca" aria-hidden="true"></div>
+
+<section class="filtros" aria-label="Filtros">
+  <h1 class="sr">Mercados, tianguis y mercados sobre ruedas de la Ciudad de México</h1>
+  <div class="barra-filtros">
+    <div class="desplegables">
+      <div class="desp">
+        <button class="dbtn" id="b-alc" type="button" aria-expanded="false" aria-controls="p-alc"><span>Alcaldía<span class="valor" id="v-alc"></span></span><span class="caret" aria-hidden="true"></span></button>
+        <div class="dpop dpop--alc" id="p-alc" hidden>
+          <div>
+            <p class="titulo">Toca una alcaldía</p>
+            <svg id="mini" class="mini" role="group" aria-label="Mapa para elegir una alcaldía"></svg>
+            <p class="nota-pop">Más intenso, más lugares con los filtros que tienes.</p>
+          </div>
+          <ul class="opciones" id="op-alc"></ul>
+        </div>
+      </div>
+      <div class="desp">
+        <button class="dbtn" id="b-tipo" type="button" aria-expanded="false" aria-controls="p-tipo"><span>Tipo<span class="valor" id="v-tipo"></span></span><span class="caret" aria-hidden="true"></span></button>
+        <div class="dpop" id="p-tipo" hidden><p class="titulo">Tipo de mercado</p><ul class="opciones" id="op-tipo"></ul></div>
+      </div>
+      <div class="desp">
+        <button class="dbtn" id="b-giro" type="button" aria-expanded="false" aria-controls="p-giro"><span>Giro<span class="valor" id="v-giro"></span></span><span class="caret" aria-hidden="true"></span></button>
+        <div class="dpop" id="p-giro" hidden>
+          <p class="titulo">Qué se vende</p>
+          <ul class="opciones" id="op-giro"></ul>
+          <p class="nota-pop">La fuente solo registra el giro de una parte de los lugares: al elegir uno se ocultan los que no lo tienen.</p>
+        </div>
+      </div>
+      <button class="dbtn" id="b-hoy" type="button" aria-pressed="true"><span class="casilla" aria-hidden="true"><svg viewBox="0 0 12 12"><path d="M2 6.5 5 9l5-6"/></svg></span>Abierto hoy</button>
+      <button class="limpiar" id="limpiar" type="button" hidden>Limpiar filtros</button>
+    </div>
+    <label class="buscar">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+      <span class="sr">Buscar por nombre, colonia o alcaldía</span>
+      <input id="q" type="search" placeholder="Buscar por nombre o colonia" autocomplete="off">
+      <button class="ubicar" id="ubicar" type="button" aria-label="Usar mi ubicación" title="Usar mi ubicación">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+      </button>
+    </label>
+  </div>
+</section>
+
+<div class="cuerpo">
+  <div class="mapa-caja">
+    <svg id="mapa" role="img" aria-label="Mapa de la Ciudad de México con sus alcaldías y los mercados">
+      <g id="capa-alcaldias"></g>
+      <g id="capa-nombres"></g>
+      <g id="capa-radio"></g>
+      <g id="capa-pines"></g>
+      <g id="capa-yo"></g>
+    </svg>
+    <div class="simbologia" id="simbologia"></div>
+    <div class="zoom">
+      <button type="button" id="acercar" aria-label="Acercar"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+      <button type="button" id="alejar" aria-label="Alejar"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+      <button type="button" id="encuadrar" aria-label="Ver toda la ciudad"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg></button>
+    </div>
+  </div>
+  <div class="lado">
+    <div class="panel">
+      <section class="croquis" aria-labelledby="t-croquis">
+        <h2 id="t-croquis">Mercados con croquis</h2>
+        <div class="croquis-botones" id="croquis-botones"></div>
+      </section>
+      <div class="resumen" id="resumen" aria-live="polite"></div>
+      <article class="detalle" id="detalle" hidden aria-live="polite"></article>
+      <h2 id="t-lista">Cerca de ti</h2>
+      <ul class="lista" id="lista" aria-labelledby="t-lista"></ul>
+    </div>
+    <p class="pie">Prototipo de hackatón; no es una aplicación oficial del Gobierno de la Ciudad de México. Tianguis, mercados públicos y mercados sobre ruedas: SEDECO, Datos Abiertos CDMX (descargados el 2026-10-25). Central de Abasto: OpenStreetMap. Límites de alcaldías: INEGI 2020.</p>
+  </div>
+</div>
+
+<script src="datos/cdmx.js"></script>
+<script src="datos/lugares-cdmx.js"></script>
+<script src="datos/planos.js"></script>
+<script>
+(() => {
+  const TIPOS = {
+    ca: { nombre: "Central de Abasto", corto: "Central de Abasto" },
+    mp: { nombre: "Mercado público", corto: "Mercados públicos" },
+    tq: { nombre: "Tianguis", corto: "Tianguis" },
+    mr: { nombre: "Mercado sobre ruedas", corto: "Sobre ruedas" }
+  };
+  const TIPO_DE = { central_abasto: "ca", mercado_fijo: "mp", tianguis: "tq", mercado_sobre_ruedas: "mr" };
+  const FUENTE = {
+    ca: "OpenStreetMap",
+    mp: "SEDECO, Datos Abiertos CDMX: Mercados públicos",
+    tq: "SEDECO, Datos Abiertos CDMX: Tianguis de la Ciudad de México",
+    mr: "SEDECO, Datos Abiertos CDMX: Mercados sobre ruedas"
+  };
+  const DIAS = { lun: "Lun", mar: "Mar", mie: "Mié", jue: "Jue", vie: "Vie", sab: "Sáb", dom: "Dom" };
+  const COLOR = { ca: "var(--c-ca)", mp: "var(--c-mp)", tq: "var(--c-tq)", mr: "var(--c-mr)" };
+  // Tintes claros para las alcaldías; los lugares van en color pleno encima
+  const TINTES = ["#fde2ec", "#e4f2df", "#fff3c4", "#ffe4c9", "#d9f2f4", "#ffdbe0", "#efe3f7", "#e9f5d9"];
+  const ZOCALO = { lat: 19.4326, lon: -99.1332 };
+  const POR_PAGINA = 25;
+  // Por debajo de este ancho de vista (unidades del mapa) los lugares se dibujan como pines y no como puntos
+  const VISTA_DETALLE = 420;
+
+  // Lugares reales (datos/lugares-cdmx.js, generado con herramientas/limpiar_datos.py)
+  const LUGARES_MAPA = LUGARES.map((l) => ({ ...l, tipo: TIPO_DE[l.categoria], lon: l.lng }));
+  const POR_ID = new Map(LUGARES_MAPA.map((l) => [l.id, l]));
+
+  // Día de hoy en la CDMX, igual que el backend del repo
+  const HOY = { Mon: "lun", Tue: "mar", Wed: "mie", Thu: "jue", Fri: "vie", Sat: "sab", Sun: "dom" }[
+    new Intl.DateTimeFormat("en-US", { weekday: "short", timeZone: "America/Mexico_City" }).format(new Date())
+  ];
+
+  const estado = { alc: null, giro: null, tipos: new Set(Object.keys(TIPOS)), soloHoy: true, q: "", yo: { ...ZOCALO, real: false }, elegido: null, mostrar: POR_PAGINA };
+
+  const $ = (s) => document.querySelector(s);
+  const NS = "http://www.w3.org/2000/svg";
+  const nodo = (tag, attrs = {}) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); return e; };
+  const forma = (t) => `<svg class="forma" viewBox="0 0 16 16" aria-hidden="true"><use href="#f-${t}"/></svg>`;
+  const fmtKm = (km) => km < 1 ? `${Math.round(km * 1000)} m` : `${km.toFixed(1)} km`;
+  const fmtN = (n) => n.toLocaleString("es-MX");
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const sinAcentos = (s) => s.toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "");
+  const abiertoHoy = (l) => l.dias.includes(HOY);
+  const diasTexto = (l) => l.dias.length >= 7 ? "Todos los días" : l.dias.length ? l.dias.map((d) => DIAS[d]).join(", ") : "Días sin registrar";
+
+  const proy = (lat, lon) => ({ x: (lon - CDMX.lon0) * CDMX.kx * CDMX.escala, y: (CDMX.lat1 - lat) * CDMX.escala });
+
+  function distanciaKm(a, b) {
+    const R = 6371, r = (x) => (x * Math.PI) / 180;
+    const dLat = r(b.lat - a.lat), dLon = r(b.lon - a.lon);
+    const h = Math.sin(dLat / 2) ** 2 + Math.cos(r(a.lat)) * Math.cos(r(b.lat)) * Math.sin(dLon / 2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(h));
+  }
+
+  // ---------- Mapa base: alcaldías ----------
+  const svg = $("#mapa");
+  const capaAlc = $("#capa-alcaldias");
+  // Primero el contorno rosa grueso (queda visible solo por fuera) y luego los rellenos con filete blanco
+  for (const a of CDMX.alcaldias) capaAlc.appendChild(nodo("path", { d: a.d, class: "contorno" }));
+  CDMX.alcaldias.forEach((a, i) => {
+    const p = nodo("path", { d: a.d, class: "alcaldia", fill: TINTES[i % TINTES.length], "data-alc": a.nombre });
+    p.appendChild(nodo("title")).textContent = a.nombre;
+    capaAlc.appendChild(p);
+  });
+  const capaNom = $("#capa-nombres");
+  const NOMBRE_CORTO = { "Cuajimalpa de Morelos": "Cuajimalpa", "La Magdalena Contreras": "Magdalena Contreras" };
+  for (const a of CDMX.alcaldias) {
+    const t = nodo("text", { x: a.x, y: a.y, class: "nombre-alc", "data-alc": a.nombre });
+    t.textContent = NOMBRE_CORTO[a.nombre] || a.nombre;
+    capaNom.appendChild(t);
+  }
+
+  // ---------- Vista: zoom y arrastre sobre el viewBox ----------
+  const MARGEN = 30;
+  const TODO = { x: -MARGEN, y: -MARGEN, w: CDMX.ancho + MARGEN * 2, h: CDMX.alto + MARGEN * 2 };
+  let vista = { ...TODO };
+  let modoDetalle = null;
+
+  function ajustaAspecto(v) {
+    // Conserva el centro y ajusta la caja a la proporción del lienzo para que no se deforme
+    const r = svg.clientWidth / Math.max(1, svg.clientHeight);
+    const cx = v.x + v.w / 2, cy = v.y + v.h / 2;
+    let w = v.w, h = v.h;
+    if (w / h < r) w = h * r; else h = w / r;
+    return { x: cx - w / 2, y: cy - h / 2, w, h };
+  }
+  function aplicaVista() {
+    vista = ajustaAspecto(vista);
+    svg.setAttribute("viewBox", `${vista.x} ${vista.y} ${vista.w} ${vista.h}`);
+    const k = unidadesPorPx();
+    for (const t of capaNom.children) { t.style.fontSize = `${11 * k}px`; t.style.strokeWidth = `${3 * k}px`; }
+    // Cambiar entre puntos y pines rehace las marcas; si no, solo se reescalan (más barato al arrastrar)
+    if ((vista.w <= VISTA_DETALLE) !== modoDetalle) pintaMarcas(); else escalaMarcas();
+  }
+  const unidadesPorPx = () => vista.w / Math.max(1, svg.clientWidth);
+
+  function zoomEn(factor, px, py) {
+    const k = unidadesPorPx();
+    const ux = vista.x + (px ?? svg.clientWidth / 2) * k;
+    const uy = vista.y + (py ?? svg.clientHeight / 2) * k;
+    const w = Math.min(TODO.w * 1.4, Math.max(120, vista.w / factor));
+    const f = w / vista.w;
+    vista = { x: ux - (ux - vista.x) * f, y: uy - (uy - vista.y) * f, w, h: vista.h * f };
+    aplicaVista();
+  }
+  function centraEn(lat, lon, anchoUnidades) {
+    const p = proy(lat, lon);
+    const w = anchoUnidades ?? Math.min(vista.w, 420);
+    const h = w * (svg.clientHeight / Math.max(1, svg.clientWidth));
+    vista = { x: p.x - w / 2, y: p.y - h / 2, w, h };
+    aplicaVista();
+  }
+
+  svg.addEventListener("wheel", (e) => {
+    e.preventDefault();
+    const r = svg.getBoundingClientRect();
+    zoomEn(e.deltaY < 0 ? 1.25 : 0.8, e.clientX - r.left, e.clientY - r.top);
+  }, { passive: false });
+
+  const punteros = new Map();
+  let distPinza = 0, movido = false;
+  svg.addEventListener("pointerdown", (e) => {
+    punteros.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    movido = false;
+    if (punteros.size === 2) { const [a, b] = [...punteros.values()]; distPinza = Math.hypot(a.x - b.x, a.y - b.y); }
+  });
+  svg.addEventListener("pointermove", (e) => {
+    if (!punteros.has(e.pointerId)) return;
+    const antes = punteros.get(e.pointerId);
+    const ahora = { x: e.clientX, y: e.clientY };
+    punteros.set(e.pointerId, ahora);
+    if (punteros.size === 1) {
+      const dx = ahora.x - antes.x, dy = ahora.y - antes.y;
+      if (!movido && Math.hypot(dx, dy) < 3) return;
+      if (!movido) { movido = true; svg.setPointerCapture(e.pointerId); svg.classList.add("arrastrando"); }
+      const k = unidadesPorPx();
+      vista.x -= dx * k; vista.y -= dy * k;
+      aplicaVista();
+    } else if (punteros.size === 2) {
+      movido = true;
+      const [a, b] = [...punteros.values()];
+      const d = Math.hypot(a.x - b.x, a.y - b.y);
+      const r = svg.getBoundingClientRect();
+      if (distPinza) zoomEn(d / distPinza, (a.x + b.x) / 2 - r.left, (a.y + b.y) / 2 - r.top);
+      distPinza = d;
+    }
+  });
+  const suelta = (e) => { punteros.delete(e.pointerId); if (punteros.size < 2) distPinza = 0; svg.classList.remove("arrastrando"); };
+  svg.addEventListener("pointerup", suelta);
+  svg.addEventListener("pointercancel", suelta);
+
+  $("#acercar").addEventListener("click", () => zoomEn(1.5));
+  $("#alejar").addEventListener("click", () => zoomEn(1 / 1.5));
+  $("#encuadrar").addEventListener("click", () => { vista = { ...TODO }; aplicaVista(); });
+
+  // ---------- Datos visibles ----------
+  let lista = [];
+  // Cada filtro se puede saltar (`sin`) para contar cuántos lugares daría cada opción de ese mismo filtro
+  function pasa(l, sin) {
+    const q = sinAcentos(estado.q.trim());
+    return (sin === "alc" || !estado.alc || l.alcaldia === estado.alc)
+      && (sin === "tipo" || estado.tipos.has(l.tipo))
+      && (sin === "giro" || !estado.giro || (l.giros || []).includes(estado.giro))
+      && (!estado.soloHoy || abiertoHoy(l))
+      && (!q || sinAcentos(`${l.nombre} ${l.alcaldia} ${l.colonia || ""}`).includes(q));
+  }
+  function contar(sin, clave) {
+    const c = new Map();
+    for (const l of LUGARES_MAPA) if (pasa(l, sin)) for (const k of [].concat(clave(l))) c.set(k, (c.get(k) || 0) + 1);
+    return c;
+  }
+
+  function visibles() {
+    return LUGARES_MAPA
+      .filter((l) => pasa(l, null))
+      .map((l) => ({ ...l, km: distanciaKm(estado.yo, l) }))
+      .sort((a, b) => a.km - b.km);
+  }
+
+  // ---------- Marcas sobre el mapa ----------
+  const capaPines = $("#capa-pines");
+  let marcas = [];
+
+  function pintaMarcas() {
+    modoDetalle = vista.w <= VISTA_DETALLE;
+    capaPines.replaceChildren();
+    // Los mercados con croquis y el elegido van al final para que queden encima
+    const peso = (l) => (PLANOS[l.id] ? 1 : 0) + (l.id === estado.elegido ? 2 : 0);
+    const orden = [...lista].sort((a, b) => peso(a) - peso(b) || b.lat - a.lat);
+    marcas = [];
+    for (const l of orden) {
+      const p = proy(l.lat, l.lon);
+      const activo = l.id === estado.elegido;
+      const plano = PLANOS[l.id];
+      if (!activo && !plano && !modoDetalle) {
+        // De lejos son cientos de lugares: puntos de color
+        const el = nodo("circle", { cx: p.x, cy: p.y, class: "punto", style: `--c:${COLOR[l.tipo]}`, "data-id": l.id });
+        el.appendChild(nodo("title")).textContent = l.nombre;
+        capaPines.appendChild(el);
+        marcas.push({ el, p, punto: true });
+        continue;
+      }
+      const el = nodo("g", {
+        class: `pin${activo ? " activo" : ""}${plano ? " destacado" : ""}`, style: `--c:${COLOR[l.tipo]}`, "data-id": l.id,
+        tabindex: 0, role: "button", "aria-label": `${l.nombre}, ${TIPOS[l.tipo].nombre}`
+      });
+      el.appendChild(nodo("path", { class: "gota", d: "M0 0C-4-7-13-12-13-22a13 13 0 0 1 26 0C13-12 4-7 0 0Z" }));
+      el.appendChild(nodo("use", { href: `#f-${l.tipo}`, x: -6.5, y: -28.5, width: 13, height: 13, class: "simbolo" }));
+      capaPines.appendChild(el);
+      marcas.push({ el, p, escala: activo ? 1.3 : plano ? 1.2 : 1 });
+      if (plano) {
+        // Etiqueta-botón junto al pin: lleva directo al croquis del mercado
+        const ancho = plano.corto.length * 8.2 + 98;
+        const et = nodo("g", { class: "ir-croquis", "data-croquis": l.id, tabindex: 0, role: "link", "aria-label": `Ver croquis del ${plano.nombre}` });
+        et.appendChild(nodo("rect", { x: 14, y: -52, width: ancho, height: 26 }));
+        const t = nodo("text", { x: 24, y: -34 });
+        t.appendChild(nodo("tspan", { class: "corto" })).textContent = plano.corto;
+        t.appendChild(nodo("tspan", { dx: 8 })).textContent = "Ver croquis";
+        et.appendChild(t);
+        et.appendChild(nodo("path", { class: "chevron", d: `M${ancho + 3} -44l4 5-4 5` }));
+        capaPines.appendChild(et);
+        marcas.push({ el: et, p, escala: 1 });
+      }
+    }
+    escalaMarcas();
+  }
+
+  // Pines, puntos y tu ubicación conservan su tamaño en pantalla con cualquier acercamiento
+  function escalaMarcas() {
+    const k = unidadesPorPx();
+    for (const m of marcas) {
+      if (m.punto) { m.el.setAttribute("r", 4.5 * k); m.el.setAttribute("stroke-width", 1.2 * k); }
+      else m.el.setAttribute("transform", `translate(${m.p.x} ${m.p.y}) scale(${k * m.escala})`);
+    }
+    const yo = proy(estado.yo.lat, estado.yo.lon);
+    $("#capa-yo").replaceChildren(
+      nodo("circle", { cx: yo.x, cy: yo.y, r: 13 * k, class: "yo-halo", "stroke-width": 2 * k }),
+      nodo("circle", { cx: yo.x, cy: yo.y, r: 7 * k, class: "yo-punto", "stroke-width": 3 * k })
+    );
+  }
+
+  const irCroquis = (id) => { location.href = `m2.html?mercado=${id}`; };
+  capaPines.addEventListener("click", (e) => {
+    if (movido) return;
+    const c = e.target.closest("[data-croquis]");
+    if (c) { irCroquis(c.dataset.croquis); return; }
+    const m = e.target.closest("[data-id]");
+    if (m) elegir(m.dataset.id, false);
+  });
+  capaPines.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    const c = e.target.closest("[data-croquis]");
+    const m = e.target.closest("[data-id]");
+    if (c || m) e.preventDefault();
+    if (c) irCroquis(c.dataset.croquis); else if (m) elegir(m.dataset.id, false);
+  });
+
+  // ---------- Panel ----------
+  // ---------- Barra de filtros ----------
+  const ALCALDIAS = CDMX.alcaldias.map((a) => a.nombre).sort((a, b) => a.localeCompare(b, "es"));
+  const GIROS = ["Abasto", "Comida", "Ropa y calzado", "Chácharas y bazar", "Arte y artesanía", "Plantas y flores", "Hogar y ferretería", "Servicios"];
+
+  // Minimapa del desplegable de alcaldía: mismos trazos que el mapa grande
+  const mini = $("#mini");
+  mini.setAttribute("viewBox", `-10 -10 ${CDMX.ancho + 20} ${CDMX.alto + 20}`);
+  for (const a of CDMX.alcaldias) {
+    const p = nodo("path", { d: a.d, "data-alc": a.nombre, tabindex: 0, role: "button" });
+    p.appendChild(nodo("title")).textContent = a.nombre;
+    mini.appendChild(p);
+  }
+
+  function opcion(attrs, contenido, n, activa) {
+    const extra = Object.entries(attrs).map(([k, v]) => `${k}="${esc(v)}"`).join(" ");
+    return `<li><button type="button" class="opcion" ${extra} aria-pressed="${activa}" ${n === 0 && !activa ? "disabled" : ""}>${contenido}<span class="n">${fmtN(n)}</span></button></li>`;
+  }
+
+  function pintaFiltros() {
+    // Alcaldía: lista tipográfica y minimapa con intensidad según cuántos lugares hay
+    const porAlc = contar("alc", (l) => l.alcaldia);
+    const totalAlc = [...porAlc.values()].reduce((a, b) => a + b, 0);
+    $("#op-alc").className = "opciones opciones--cols";
+    $("#op-alc").innerHTML = opcion({ "data-alc": "" }, "Todas las alcaldías", totalAlc, !estado.alc) +
+      ALCALDIAS.map((n) => opcion({ "data-alc": n }, esc(n), porAlc.get(n) || 0, estado.alc === n)).join("");
+    const max = Math.max(1, ...porAlc.values());
+    for (const p of mini.querySelectorAll("path")) {
+      const n = porAlc.get(p.dataset.alc) || 0;
+      p.setAttribute("fill", n ? "var(--guinda)" : "var(--blanco)");
+      p.setAttribute("fill-opacity", n ? (0.12 + 0.78 * n / max).toFixed(2) : 1);
+      p.setAttribute("aria-label", `${p.dataset.alc}, ${fmtN(n)} lugares`);
+      p.classList.toggle("elegida", p.dataset.alc === estado.alc);
+    }
+    $("#v-alc").textContent = estado.alc || "";
+
+    // Tipo de mercado: varios a la vez
+    const porTipo = contar("tipo", (l) => l.tipo);
+    $("#op-tipo").innerHTML = Object.entries(TIPOS).map(([t, info]) =>
+      opcion({ "data-tipo": t, style: `--c:${COLOR[t]}` }, `${forma(t)}${info.corto}`, porTipo.get(t) || 0, estado.tipos.has(t))).join("");
+    const nTipos = estado.tipos.size;
+    $("#v-tipo").textContent = nTipos === 4 ? "" : nTipos === 1 ? TIPOS[[...estado.tipos][0]].corto : `${nTipos} de 4`;
+
+    // Giro: categorías agrupadas a partir del texto de la fuente
+    const porGiro = contar("giro", (l) => l.giros || []);
+    $("#op-giro").innerHTML = opcion({ "data-giro": "" }, "Todos los giros", contar("giro", () => "x").get("x") || 0, !estado.giro) +
+      GIROS.map((g) => opcion({ "data-giro": g }, esc(g), porGiro.get(g) || 0, estado.giro === g)).join("");
+    $("#v-giro").textContent = estado.giro || "";
+
+    $("#b-hoy").setAttribute("aria-pressed", String(estado.soloHoy));
+    $("#limpiar").hidden = !(estado.alc || estado.giro || nTipos < 4 || estado.q);
+
+    // En el mapa grande se apagan las alcaldías que no están elegidas
+    for (const el of document.querySelectorAll("#mapa [data-alc]")) el.classList.toggle("apagada", !!estado.alc && el.dataset.alc !== estado.alc);
+  }
+
+  function pintaSimbologia() {
+    $("#simbologia").innerHTML = `<b>Simbología</b><ul>${Object.entries(TIPOS).map(([t, info]) =>
+      `<li><svg viewBox="0 0 16 16" aria-hidden="true" style="fill:${COLOR[t]}"><use href="#f-${t}"/></svg>${info.corto}</li>`).join("")}
+      <li><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5" fill="var(--foco)" stroke="#fff" stroke-width="2"/></svg>Tu ubicación</li></ul>`;
+  }
+
+  function pintaResumen() {
+    const dondeYo = estado.yo.real ? "tu ubicación" : "el Zócalo (activa tu ubicación para afinar)";
+    const cerca = lista[0];
+    $("#resumen").innerHTML = cerca
+      ? `<strong>El más cercano${estado.soloHoy ? " abierto hoy" : ""}: ${esc(cerca.nombre)}, a ${fmtKm(cerca.km)}</strong><span>Distancia en línea recta desde ${dondeYo}.</span>`
+      : `<strong>Sin resultados</strong><span>Prueba con otro nombre, activa más tipos de mercado o quita «Abierto hoy».</span>`;
+  }
+
+  function pintaLista() {
+    $("#t-lista").innerHTML = `Cerca de ti <span class="cuenta">(${fmtN(lista.length)})</span>`;
+    if (!lista.length) { $("#lista").innerHTML = `<li class="vacio">No hay mercados con esos filtros.</li>`; return; }
+    const faltan = lista.length - estado.mostrar;
+    $("#lista").innerHTML = lista.slice(0, estado.mostrar).map((l) => `
+      <li><button type="button" class="item" data-id="${l.id}" style="--c:${COLOR[l.tipo]}" aria-current="${estado.elegido === l.id}">
+        <span class="icono-tipo" aria-hidden="true"><svg viewBox="0 0 16 16"><use href="#f-${l.tipo}"/></svg></span>
+        <span><span class="nombre">${esc(l.nombre)}</span><br><span class="meta">${esc(l.alcaldia)}, ${esc(diasTexto(l).toLowerCase())}</span></span>
+        <span class="km">${fmtKm(l.km)}</span>
+      </button></li>`).join("") +
+      (faltan > 0 ? `<li><button type="button" class="accion mas" id="mas">Ver ${Math.min(POR_PAGINA, faltan)} más</button></li>` : "");
+  }
+
+  function fila(dt, dd) { return dd == null || dd === "" ? "" : `<dt>${dt}</dt><dd>${dd}</dd>`; }
+
+  function pintaDetalle() {
+    const box = $("#detalle");
+    const l = POR_ID.get(estado.elegido);
+    if (!l) { box.hidden = true; return; }
+    const ruta = `https://www.google.com/maps/dir/?api=1&destination=${l.lat},${l.lng}`;
+    const dias = esc(diasTexto(l)) + (l.diasFuente ? "" : `<span class="nota">La fuente no publica días; suele abrir diario.</span>`);
+    box.style.setProperty("--c", COLOR[l.tipo]);
+    box.innerHTML = `
+      <button type="button" class="cerrar-detalle" id="cerrar" aria-label="Cerrar detalle">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+      <span class="etiqueta">${TIPOS[l.tipo].nombre}</span>
+      <h3>${esc(l.nombre)}</h3>
+      <span class="estado-hoy${abiertoHoy(l) ? " abierto" : ""}">${abiertoHoy(l) ? "Abierto hoy" : "Cerrado hoy"}</span>
+      <dl>
+        ${fila("Alcaldía", esc(l.alcaldia))}
+        ${fila("Colonia", l.colonia && esc(l.colonia))}
+        ${fila("Ubicación", l.ubicacion && esc(l.ubicacion))}
+        ${fila("Distancia", fmtKm(distanciaKm(estado.yo, l)))}
+        ${fila("Días", dias)}
+        ${fila("Horario", l.horario && esc(l.horario))}
+        ${fila("Locales", l.locales != null ? fmtN(l.locales) : null)}
+        ${fila("Oferentes", l.oferentes != null ? fmtN(l.oferentes) + (l.ruta ? ` (${esc(l.ruta)})` : "") : null)}
+        ${fila("Giro", l.giro && esc(l.giro))}
+      </dl>
+      <div class="acciones">
+        ${PLANOS[l.id] ? `<a class="accion principal" href="m2.html?mercado=${l.id}">Ver croquis</a>` : ""}
+        <a class="accion${PLANOS[l.id] ? "" : " principal"}" href="${ruta}" target="_blank" rel="noopener">Cómo llegar</a>
+      </div>
+      <p class="fuente">Fuente: ${FUENTE[l.tipo]}.</p>`;
+    box.hidden = false;
+    $("#cerrar").addEventListener("click", () => { estado.elegido = null; pinta(); });
+  }
+
+  function pinta() {
+    lista = visibles();
+    pintaFiltros();
+    pintaMarcas();
+    pintaResumen();
+    pintaDetalle();
+    pintaLista();
+  }
+
+  function elegir(id, centrar) {
+    estado.elegido = id;
+    const l = POR_ID.get(id);
+    if (centrar && l) centraEn(l.lat, l.lon, 300);
+    pinta();
+    $("#detalle").scrollIntoView({ block: "nearest" });
+  }
+
+  // ---------- Eventos ----------
+  // Desplegables: uno abierto a la vez; se cierran al tocar fuera o con Escape
+  const BOTONES = ["#b-alc", "#b-tipo", "#b-giro"].map((id) => $(id));
+  function cierraDesplegables(salvo) {
+    for (const b of BOTONES) if (b !== salvo) { b.setAttribute("aria-expanded", "false"); $("#" + b.getAttribute("aria-controls")).hidden = true; }
+  }
+  for (const b of BOTONES) b.addEventListener("click", () => {
+    const abrir = b.getAttribute("aria-expanded") !== "true";
+    cierraDesplegables(b);
+    b.setAttribute("aria-expanded", String(abrir));
+    $("#" + b.getAttribute("aria-controls")).hidden = !abrir;
+  });
+  document.addEventListener("click", (e) => { if (!e.target.closest(".desp")) cierraDesplegables(null); });
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape") return;
+    const abierto = BOTONES.find((b) => b.getAttribute("aria-expanded") === "true");
+    if (abierto) { cierraDesplegables(null); abierto.focus(); }
+  });
+
+  function eligeAlcaldia(n) {
+    estado.alc = n || null;
+    estado.mostrar = POR_PAGINA;
+    cierraDesplegables(null);
+    pinta();
+    // Acerca el mapa grande a la alcaldía elegida, o vuelve a toda la ciudad
+    const p = estado.alc && document.querySelector(`#capa-alcaldias .alcaldia[data-alc="${CSS.escape(estado.alc)}"]`);
+    if (p) { const b = p.getBBox(); vista = { x: b.x - 40, y: b.y - 40, w: b.width + 80, h: b.height + 80 }; }
+    else vista = { ...TODO };
+    aplicaVista();
+  }
+  $("#op-alc").addEventListener("click", (e) => { const b = e.target.closest("[data-alc]"); if (b) eligeAlcaldia(b.dataset.alc); });
+  mini.addEventListener("click", (e) => { const p = e.target.closest("[data-alc]"); if (p) eligeAlcaldia(estado.alc === p.dataset.alc ? "" : p.dataset.alc); });
+  mini.addEventListener("keydown", (e) => {
+    const p = e.target.closest("[data-alc]");
+    if (p && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); eligeAlcaldia(p.dataset.alc); }
+  });
+  $("#op-tipo").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-tipo]"); if (!b) return;
+    const t = b.dataset.tipo;
+    if (estado.tipos.has(t)) { if (estado.tipos.size > 1) estado.tipos.delete(t); } else estado.tipos.add(t);
+    estado.mostrar = POR_PAGINA;
+    pinta();
+  });
+  $("#op-giro").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-giro]"); if (!b) return;
+    estado.giro = b.dataset.giro || null;
+    estado.mostrar = POR_PAGINA;
+    cierraDesplegables(null);
+    pinta();
+  });
+  $("#b-hoy").addEventListener("click", () => { estado.soloHoy = !estado.soloHoy; estado.mostrar = POR_PAGINA; pinta(); });
+  $("#limpiar").addEventListener("click", () => {
+    Object.assign(estado, { alc: null, giro: null, tipos: new Set(Object.keys(TIPOS)), q: "", mostrar: POR_PAGINA });
+    $("#q").value = "";
+    pinta();
+    vista = { ...TODO };
+    aplicaVista();
+  });
+  $("#lista").addEventListener("click", (e) => {
+    if (e.target.closest("#mas")) { estado.mostrar += POR_PAGINA; pintaLista(); return; }
+    const b = e.target.closest("[data-id]"); if (b) elegir(b.dataset.id, true);
+  });
+  $("#q").addEventListener("input", (e) => { estado.q = e.target.value; estado.mostrar = POR_PAGINA; pinta(); });
+
+  $("#ubicar").addEventListener("click", () => {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition((p) => {
+      estado.yo = { lat: p.coords.latitude, lon: p.coords.longitude, real: true };
+      centraEn(estado.yo.lat, estado.yo.lon, 360);
+      pinta();
+    }, () => {
+      $("#resumen").innerHTML = `<strong>No pudimos obtener tu ubicación</strong><span>Seguimos midiendo desde el Zócalo.</span>`;
+    }, { timeout: 8000 });
+  });
+
+  lista = visibles();
+  pintaSimbologia();
+  $("#croquis-botones").innerHTML = Object.values(PLANOS).map((p) => `
+    <a class="accion croquis-btn" href="m2.html?mercado=${p.id}">
+      <span><b>${esc(p.corto)}</b><span class="sub">${fmtN(p.locales)} locales</span></span>
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+    </a>`).join("");
+  new ResizeObserver(() => aplicaVista()).observe(svg);
+  pinta();
+  aplicaVista();
+})();
+</script>
+</body>
+</html>

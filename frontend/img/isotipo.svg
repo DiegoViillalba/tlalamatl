@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 120 120" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+  <!-- Isotipo de TLALAMATL, al estilo de los códices del centro de México:
+       dos comerciantes de perfil, frente a frente, con penacho, orejera y collar; de su boca sale la vírgula
+       de la palabra (están negociando) y entre sus manos pasa un cajete con granos de cacao, moneda del tianguis.
+       Marco de piedra con esquinas escalonadas y greca escalonada como piso. El de la derecha es el izquierdo en espejo. -->
+  <path stroke-linejoin="miter" stroke-linecap="square" d="M18 5H102V10H109V18H115V102H109V110H102V115H18V110H11V102H5V18H11V10H18Z"/>
+
+  <g id="comerciante">
+    <!-- penacho: tres plumas hacia atrás -->
+    <path d="M33 31C30 24 27 19 22 15"/>
+    <path d="M37 31C36.5 23 35.5 17 33 11"/>
+    <path d="M29 33C24 29 19 27 13 26"/>
+    <!-- cabello en bloque, con fleco sobre la frente -->
+    <path fill="currentColor" d="M26 31H42.5V37H33V55H26Z"/>
+    <!-- rostro de perfil: frente, nariz, labios y barbilla -->
+    <path d="M42.5 37 43 41 47.5 45.5 43.5 47.5 44.5 50 43 51.5 43.5 54Q41 57 33 56"/>
+    <!-- ojo almendrado con pupila al frente -->
+    <path d="M36.5 43Q39.5 40.8 42 43Q39.5 44.6 36.5 43Z" stroke-width="2"/>
+    <circle cx="40.6" cy="42.9" r="1.1" fill="currentColor" stroke="none"/>
+    <!-- orejera -->
+    <circle cx="36" cy="49" r="2.8" stroke-width="2.4"/>
+    <!-- collar de cuentas -->
+    <g fill="currentColor" stroke="none">
+      <circle cx="31" cy="60" r="2"/><circle cx="35.5" cy="61.2" r="2"/><circle cx="40" cy="60.4" r="2"/>
+    </g>
+    <!-- vírgula de la palabra -->
+    <path d="M47 49C53 47 55.5 41 52.5 37.5 50.5 35.3 47 36.6 48 39.6"/>
+    <!-- tilma -->
+    <path d="M28 64H42L46 89H22Z"/>
+    <!-- brazo que ofrece el cajete -->
+    <path d="M41 69Q47 73 52.5 72.5"/>
+  </g>
+  <use href="#comerciante" xlink:href="#comerciante" transform="translate(120 0) scale(-1 1)"/>
+
+  <!-- cajete con cacao -->
+  <path d="M51 71H69C69 78 65 81.5 60 81.5S51 78 51 71Z"/>
+  <g fill="currentColor" stroke="none">
+    <ellipse cx="55.5" cy="67.6" rx="2" ry="2.6"/><ellipse cx="60" cy="66.6" rx="2" ry="2.6"/><ellipse cx="64.5" cy="67.6" rx="2" ry="2.6"/>
+  </g>
+
+  <!-- piso: greca escalonada -->
+  <path stroke-linejoin="miter" stroke-linecap="square" d="M18 103H30V95H40V103H50V95H60V103H70V95H80V103H90V95H102"/>
+</svg>

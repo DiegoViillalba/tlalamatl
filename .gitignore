@@ -4,6 +4,7 @@ __pycache__/
 .venv/
 .pytest_cache/
 backend/tlalamatl.db
+backend/.env
 
 # Node
 node_modules/

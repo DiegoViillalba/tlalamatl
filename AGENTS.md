@@ -145,7 +145,7 @@ Debe salir vacío. En la rama `rol/cliente` excluye también `publico.py` y `tes
 - **Usa componentes shadcn** (`@/components/ui/*`) antes de crear propios.
 - **Tests:** cada rol agrega los suyos en `backend/tests/test_<rol>.py`, usando las fixtures `client` y `login` de `conftest.py`.
 - **No es e-commerce:** no agregues carrito, pagos, pedidos ni inventario con stock sin acordarlo; el modelo todavía trae `Pedido` y `stock` del andamiaje, pero están fuera del MVP.
-- **Simplicidad:** sin Docker, Postgres, auth real ni librerías fuera del stack sin acordarlo. Código simple y legible, sin abstracciones prematuras. UI en español y mobile-first.
+- **Simplicidad:** sin Docker, Postgres ni librerías fuera del stack sin acordarlo. La única auth real es el login por correo de Supabase (ver `compartido.md`); Supabase solo autentica, los datos siguen en SQLite. Código simple y legible, sin abstracciones prematuras. UI en español y mobile-first.
 
 ## Comandos
 

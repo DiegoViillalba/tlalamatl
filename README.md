@@ -17,6 +17,16 @@ make dev       # API en http://localhost:8000 (docs en /docs) y app en http://lo
 
 `make dev` siembra la base la primera vez. Para reiniciar los datos demo en cualquier momento, usa `make seed`.
 
+### Login por correo (opcional)
+
+Sin configurar nada funciona el login demo. Para activar el login sin contraseña (código de un solo uso por correo, con Supabase Auth):
+
+1. Copia `backend/.env.example` a `backend/.env` y `frontend/.env.example` a `frontend/.env.local`, y llena las variables de Supabase.
+2. En Supabase, edita las plantillas de correo **Confirm signup** (primer ingreso) y **Magic Link** (los siguientes) en *Authentication → Emails → Templates* para que muestren el código `{{ .Token }}`.
+3. Configura un SMTP propio en *Authentication → Emails → SMTP Settings*. El que trae Supabase tiene un límite muy bajo de envíos.
+
+Al primer ingreso, el correo se liga al usuario que ya tenga ese email. Si no existe, se crea como cliente.
+
 Otros comandos:
 
 | Comando | Qué hace |

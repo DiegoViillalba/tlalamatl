@@ -1,8 +1,10 @@
-// Sesión demo (token + usuario) guardada en localStorage. Archivo COMPARTIDO.
+// Sesión (demo o Supabase) guardada en localStorage. Archivo COMPARTIDO.
 import { useSyncExternalStore } from 'react'
 import type { Rol, Usuario } from '@/api'
+import { supabase } from '@/lib/supabase'
 
-export type Sesion = { token: string; usuario: Usuario }
+/** Demo: guardamos nuestro JWT. Supabase: su SDK guarda y refresca el token, aquí solo va el usuario. */
+export type Sesion = { usuario: Usuario } & ({ origen?: 'demo'; token: string } | { origen: 'supabase' })
 
 const CLAVE = 'tlalamatl.sesion'
 const oyentes = new Set<() => void>()
@@ -32,6 +34,24 @@ export function guardarSesion(sesion: Sesion | null) {
   }
   oyentes.forEach((avisar) => avisar())
 }
+
+/** Token para la API. El de Supabase vence cada hora; `getSession()` lo devuelve ya refrescado. */
+export async function tokenActual() {
+  const sesion = actual
+  if (sesion?.origen !== 'supabase') return sesion?.token
+  const { data } = (await supabase?.auth.getSession()) ?? { data: { session: null } }
+  return data.session?.access_token
+}
+
+export function cerrarSesion() {
+  if (actual?.origen === 'supabase') void supabase?.auth.signOut()
+  guardarSesion(null)
+}
+
+// Si Supabase cierra la sesión por su cuenta (refresh token revocado o vencido), también se cierra aquí.
+supabase?.auth.onAuthStateChange((evento) => {
+  if (evento === 'SIGNED_OUT' && actual?.origen === 'supabase') guardarSesion(null)
+})
 
 function suscribir(avisar: () => void) {
   oyentes.add(avisar)

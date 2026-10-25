@@ -30,7 +30,18 @@ export const TIPOS_PROVEEDOR: Record<TipoProveedor, string> = {
   almacen: 'Almacén',
 }
 
-// EstadoOrden se agrega aquí cuando algún endpoint la exponga en el cliente generado.
+// Mismos valores que `EstadoOrden` en backend/app/models.py. No se importa de '@/api' porque el cliente
+// generado solo lo exporta cuando algún endpoint lo usa; el tipo del cliente es compatible con este.
+export const ESTADOS_ORDEN = {
+  solicitada: 'Nueva',
+  confirmada: 'Confirmada',
+  enviada: 'Enviada',
+  recibida: 'Recibida',
+  rechazada: 'Rechazada',
+} as const
+
+export type EstadoOrden = keyof typeof ESTADOS_ORDEN
+
 export const ESTADOS_PEDIDO: Record<EstadoPedido, string> = {
   creado: 'Nuevo',
   aceptado: 'Aceptado',

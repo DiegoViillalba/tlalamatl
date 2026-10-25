@@ -124,7 +124,7 @@ async def escanear_foto_inventario(
         datos_imagen = await foto.read()
 
         respuesta = cliente.models.generate_content(
-            model="gemini-2.0-flash",
+            model=os.getenv("GEMINI_MODEL", "gemini-3.8-flash"),
             contents=[
                 genai_types.Part.from_bytes(data=datos_imagen, mime_type=foto.content_type),
                 PROMPT_ESCANEO,

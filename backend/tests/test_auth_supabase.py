@@ -29,12 +29,16 @@ def token_supabase(sub: str, email: str | None, llave=LLAVE, emisor: str = EMISO
 
 def test_primer_ingreso_crea_cliente(client):
     headers = token_supabase("uuid-nuevo", "Vecina@Correo.mx")
-    assert client.get("/auth/yo", headers=headers).status_code == 401
+    # El primer acceso ya crea al cliente: así una instancia nueva del backend no cierra la sesión.
+    yo = client.get("/auth/yo", headers=headers)
+    assert yo.status_code == 200
+    assert yo.json()["rol"] == "cliente"
+    assert yo.json()["email"] == "vecina@correo.mx"
 
     r = client.post("/auth/vincular", headers=headers)
     assert r.status_code == 200
+    assert r.json()["id"] == yo.json()["id"]
     assert r.json()["rol"] == "cliente"
-    assert r.json()["email"] == "vecina@correo.mx"
 
     assert client.get("/auth/yo", headers=headers).json()["id"] == r.json()["id"]
     assert client.get("/cliente/pedidos", headers=headers).status_code == 200

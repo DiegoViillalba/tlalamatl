@@ -50,6 +50,22 @@ def a_publico(comercio: Comercio, hoy: Dia) -> ComercioPublico:
     return ComercioPublico(**comercio.model_dump(), abierto_hoy=hoy in comercio.dias_operacion)
 
 
+class ProductoBaseLeer(SQLModel):
+    id: int
+    nombre: str
+    unidad: str
+    categoria: str
+    canasta_basica: bool
+    meses_temporada: list[int]
+
+
+@router.get("/productos-base")
+def listar_productos_base(session: SessionDep) -> list[ProductoBaseLeer]:
+    """Catálogo común de productos. Un precio solo llega al dashboard si su producto apunta a uno de estos."""
+    bases = session.exec(select(ProductoBase).order_by(ProductoBase.categoria, ProductoBase.nombre)).all()
+    return [ProductoBaseLeer.model_validate(b, from_attributes=True) for b in bases]
+
+
 @router.get("/comercios")
 def listar_comercios(
     session: SessionDep,

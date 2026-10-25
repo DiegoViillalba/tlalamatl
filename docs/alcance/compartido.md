@@ -57,7 +57,6 @@ solicitada ──► confirmada ──► enviada ──► recibida
 
 - **Idioma y moneda:** todo en español de México, con pesos MXN (`pesos()` en `frontend/src/lib/formato.ts`).
 - **"Abierto hoy":** el día de hoy aparece en `dias_operacion` del comercio, con la zona horaria `America/Mexico_City`.
-- **Stock bajo:** `stock < stock_minimo`.
 - **Identidad propia de Tlalamatl:** no se usan logos ni identidad gráfica oficial del Gobierno de la CDMX.
 - **Datos:** todo es mock. `make seed` deja la base en un estado conocido, y el seed garantiza un tianguis abierto hoy.
 
@@ -91,10 +90,8 @@ solicitada ──► confirmada ──► enviada ──► recibida
 - [ ] "Salir" borra la sesión y vuelve a la entrada.
 - [ ] Una transición de estado inválida responde 409 con un mensaje en español.
 - [ ] **Flujo demo de punta a punta** (requiere las 3 ramas integradas):
-  1. Un cliente pide productos a un puesto de tianguis abierto hoy.
-  2. El comercio acepta el pedido; el stock baja y aparece una alerta de stock bajo.
-  3. El comercio crea una orden de abasto a un proveedor mayorista.
-  4. El proveedor la confirma y la envía; el comercio la marca recibida y su stock sube.
+  1. El comercio crea una orden de abasto a un proveedor mayorista.
+  2. El proveedor la confirma y la envía; el comercio la marca recibida y su stock sube.
 
 ## Preguntas abiertas
 

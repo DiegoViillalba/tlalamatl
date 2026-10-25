@@ -516,6 +516,8 @@ def sembrar(session: Session, hoy: Dia | None = None) -> None:
     orden(ceiba, sanjuan, EstadoOrden.confirmada, [(ofertas[sanjuan.id][0], 80)], 10)
     orden(martinez, xochimilco, EstadoOrden.solicitada, [(ofertas[xochimilco.id][1], 40)], 2)
     orden(rosita, sanjuan, EstadoOrden.rechazada, [(ofertas[sanjuan.id][2], 2)], 48)
+    # Segunda orden confirmada en Iztapalapa (junto a la de La Ceiba): sirve para sugerir una ruta compartida.
+    orden(mary, sanjuan, EstadoOrden.confirmada, [(ofertas[sanjuan.id][1], 60)], 6)
 
     # --- Favoritos y comentarios de clientes ------------------------------------------
     for cliente, favoritos in [(clientes[0], [mary, ramirez]), (clientes[1], [guera, mary]), (clientes[2], [chuy])]:

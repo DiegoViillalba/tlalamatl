@@ -72,6 +72,19 @@ class EstadoOrden(str, Enum):
     rechazada = "rechazada"
 
 
+class EstadoRuta(str, Enum):
+    abierta = "abierta"  # acepta solicitudes de comercios para sumarse
+    en_camino = "en_camino"
+    completada = "completada"
+    cancelada = "cancelada"
+
+
+class EstadoSolicitudFlete(str, Enum):
+    pendiente = "pendiente"
+    aceptada = "aceptada"
+    rechazada = "rechazada"
+
+
 class ListaDias(TypeDecorator):
     """Guarda list[Dia] como JSON y la lee de vuelta como enums (no como strings sueltos)."""
 
@@ -200,6 +213,8 @@ class OrdenAbasto(SQLModel, table=True):
     proveedor_id: int = Field(foreign_key="proveedor.id", index=True)
     estado: EstadoOrden = EstadoOrden.solicitada
     creado_en: datetime = Field(default_factory=ahora)
+    # Ruta de entrega compartida a la que pertenece la orden (None = entrega por separado).
+    ruta_id: int | None = Field(default=None, foreign_key="rutaentrega.id", index=True)
 
     items: list["OrdenAbastoItem"] = Relationship(back_populates="orden")
 
@@ -215,6 +230,34 @@ class OrdenAbastoItem(SQLModel, table=True):
     precio_unitario: float
 
     orden: OrdenAbasto = Relationship(back_populates="items")
+
+
+class RutaEntrega(SQLModel, table=True):
+    """Flete compartido: un proveedor entrega las órdenes de varios comercios en un solo viaje.
+
+    Las paradas son las `OrdenAbasto` con este `ruta_id`. El costo del flete se reparte en partes
+    iguales entre los comercios distintos de la ruta (se calcula al leer; no se guarda).
+    """
+
+    id: int | None = Field(default=None, primary_key=True)
+    proveedor_id: int = Field(foreign_key="proveedor.id", index=True)
+    zona: str  # alcaldía o zona que cubre la ruta
+    fecha: date  # día de salida
+    costo_flete: float = 0  # costo total del viaje, en MXN
+    nota: str | None = None
+    estado: EstadoRuta = EstadoRuta.abierta
+    creado_en: datetime = Field(default_factory=ahora)
+
+
+class SolicitudFlete(SQLModel, table=True):
+    """Un comercio pide que su orden (confirmada) viaje en una ruta abierta del proveedor."""
+
+    id: int | None = Field(default=None, primary_key=True)
+    ruta_id: int = Field(foreign_key="rutaentrega.id", index=True)
+    comercio_id: int = Field(foreign_key="comercio.id", index=True)
+    orden_id: int = Field(foreign_key="ordenabasto.id", index=True)
+    estado: EstadoSolicitudFlete = EstadoSolicitudFlete.pendiente
+    creado_en: datetime = Field(default_factory=ahora)
 
 
 class Favorito(SQLModel, table=True):
@@ -271,4 +314,5 @@ class OrdenAbastoLeer(SQLModel):
     proveedor_id: int
     estado: EstadoOrden
     creado_en: datetime
+    ruta_id: int | None = None
     items: list[OrdenAbastoItemLeer]

@@ -59,7 +59,7 @@ Tlalamatl **no es un e-commerce, es una plataforma de contacto entre personas**:
 | Tabla `Comentario` (usuario, comercio, texto ≤ 500, fecha) | Comentarios en la ficha | `rol/cliente`, `rol/comercio` | ✅ en modelo y seed |
 | Tabla `ProductoBase` (nombre único, unidad, categoría, `canasta_basica`, `meses_temporada`) y `producto_base_id` opcional en `Producto` y `OfertaProveedor` | Agrupar precios por producto, canasta básica y temporada | Público, `rol/comercio`, `rol/proveedor` | ✅ en modelo y seed |
 | Tabla `PrecioHistorico` (producto base, fecha, menudeo promedio/mínimo, mayoreo promedio/mínimo, n de muestras) | Historial semanal de precios y canasta sugerida | Público | ✅ en modelo y seed (12 semanas por producto, con patrón de temporada y ruido determinista; la última semana coincide con los precios actuales) |
-| `RutaEntrega` y `ruta_id` en `OrdenAbasto` | Rutas compartidas | `rol/proveedor` | ⏳ después |
+| `RutaEntrega`, `SolicitudFlete` y `ruta_id` en `OrdenAbasto` | Fletes compartidos | `rol/proveedor`, `rol/comercio` | ✅ en modelo y seed (ver "Fletes compartidos") |
 
 En el seed, los teléfonos son **ficticios**: tienen la forma `5500xxxxxx`, un rango que en la CDMX no se asigna. Nunca se usan números reales. Un puesto (Pollería El Güero) no tiene WhatsApp, para probar ese caso en la ficha.
 
@@ -68,6 +68,32 @@ En el seed, los teléfonos son **ficticios**: tienen la forma `5500xxxxxx`, un r
 - **Layout común:** encabezado con la marca, el nombre del usuario (o "Entrar" si no hay sesión) y "Salir"; contenido con scroll; navegación inferior tipo app.
 - **Simulación de teléfono:** en desktop la app ocupa como máximo 430 px de ancho con marco de teléfono. En móvil o webview ocupa toda la pantalla.
 - **Máquinas de estado validadas en el backend** (`backend/app/estados.py`). Una transición inválida responde 409.
+
+### Fletes compartidos (proveedor ↔ comercios)
+
+Un proveedor agrupa las órdenes **confirmadas** de varios comercios cercanos en una `RutaEntrega` (un solo viaje) y los comercios pueden **pedir sumarse** a una ruta abierta.
+
+- **Ruta:** `proveedor`, `zona`, `fecha` de salida, `costo_flete` (total, MXN), `nota` y `estado`. Las paradas son las `OrdenAbasto` con ese `ruta_id`.
+- **Costo repartido por comercio:** `cuota_flete = costo_flete / comercios distintos de la ruta`, en partes iguales y redondeado a centavos. No se guarda: se calcula al leer, así que cambia cuando entra o sale un comercio.
+- **Estados de la ruta** (`validar_ruta()` en `estados.py`; inválida = 409): `abierta → en_camino → completada`, y `abierta → cancelada`. Solo una ruta `abierta` acepta solicitudes. Al pasar a `en_camino`, las órdenes de la ruta pasan de `confirmada` a `enviada`; al cancelar, las órdenes quedan libres (`ruta_id = null`).
+- **Solicitud de flete (`SolicitudFlete`):** el comercio ofrece una orden suya `confirmada` y sin ruta; nace `pendiente` y el proveedor la `aceptada` (la orden entra a la ruta) o `rechazada`.
+
+| Quién | Transición |
+|---|---|
+| proveedor | crea la ruta con órdenes `confirmadas` suyas y sin ruta; `abierta → en_camino` / `cancelada`; `en_camino → completada` |
+| comercio | crea una solicitud `pendiente` sobre una ruta `abierta` |
+| proveedor | `pendiente → aceptada` / `rechazada` |
+
+**Lado comercio (a implementar en `rol/comercio`; el modelo ya existe):**
+
+| Método | Ruta | Para qué |
+|---|---|---|
+| GET | `/comercio/rutas-abiertas` | Rutas `abiertas` de los proveedores con los que el comercio tiene órdenes `confirmadas` sin ruta; con proveedor, zona, fecha, costo, número de comercios y la cuota estimada si se suma. |
+| POST | `/comercio/rutas/{id}/solicitudes` | Cuerpo `{ orden_id }`. 404 si la ruta u orden no son del caso; 409 si la ruta no está `abierta`, la orden no está `confirmada` o ya tiene ruta o solicitud pendiente. |
+| GET | `/comercio/solicitudes-flete` | Sus solicitudes con estado y la ruta. |
+| DELETE | `/comercio/solicitudes-flete/{id}` | Retira una solicitud `pendiente`. |
+
+Cuota estimada si se suma un comercio nuevo: `costo_flete / (comercios actuales + 1)`. Un comercio que ya está en la ruta no cambia el reparto.
 
 ### Estados de Pedido (cliente → comercio)
 

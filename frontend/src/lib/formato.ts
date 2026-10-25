@@ -39,6 +39,34 @@ export const ESTADOS_PEDIDO: Record<EstadoPedido, string> = {
   cancelado: 'Cancelado',
 }
 
+// Categorías de ProductoBase (dashboard de precios). Una categoría nueva sin etiqueta se muestra tal cual.
+export const CATEGORIAS_PRODUCTO: Record<string, string> = {
+  fruta: 'Frutas',
+  verdura: 'Verduras',
+  abarrote: 'Abarrotes',
+  proteina: 'Carne y huevo',
+}
+
+export const MESES = [
+  'Enero',
+  'Febrero',
+  'Marzo',
+  'Abril',
+  'Mayo',
+  'Junio',
+  'Julio',
+  'Agosto',
+  'Septiembre',
+  'Octubre',
+  'Noviembre',
+  'Diciembre',
+]
+
+/** Mes actual (1-12) en horario de la CDMX. */
+export function mesActual() {
+  return Number(new Intl.DateTimeFormat('es-MX', { month: 'numeric', timeZone: 'America/Mexico_City' }).format(new Date()))
+}
+
 const pesosMx = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' })
 
 export function pesos(cantidad: number) {

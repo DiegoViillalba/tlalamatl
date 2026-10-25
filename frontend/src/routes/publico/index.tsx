@@ -2,9 +2,9 @@
 import { ChartColumn, CircleUser, LogIn, MapPin } from 'lucide-react'
 import type { RouteObject } from 'react-router'
 import { LayoutRol, type ItemNav } from '@/components/layout-rol'
-import { Pendiente } from '@/components/pendiente'
 import { INICIO_POR_ROL, useSesion } from '@/lib/sesion'
 import { MapaMercados } from './mapa/mapa'
+import { Precios } from './precios/precios'
 
 function LayoutPublico() {
   const sesion = useSesion()
@@ -22,9 +22,6 @@ export const rutasPublicas: RouteObject = {
   element: <LayoutPublico />,
   children: [
     { index: true, element: <MapaMercados /> },
-    {
-      path: 'precios',
-      element: <Pendiente titulo="Dashboard de precios" doc="docs/alcance/compartido.md" />,
-    },
+    { path: 'precios', element: <Precios /> },
   ],
 }

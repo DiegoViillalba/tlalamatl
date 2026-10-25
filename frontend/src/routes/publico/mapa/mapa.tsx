@@ -3,20 +3,21 @@
 // Portado de m1.html. Ver docs/alcance/compartido.md, "Mapa de bienvenida".
 import { useQuery } from '@tanstack/react-query'
 import { LocateFixed, MapPin, X } from 'lucide-react'
-import { useMemo, useState, type CSSProperties } from 'react'
+import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { publicoListarComerciosOptions, publicoListarProductosOptions } from '@/api/@tanstack/react-query.gen'
 import type { ComercioPublico } from '@/api'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { DIAS, pesos } from '@/lib/formato'
-import { distanciaKm, fmtKm, sinAcentos, ZOCALO } from './geometria'
+import { distanciaKm, fmtKm, proyecta, sinAcentos, ZOCALO } from './geometria'
 import { cargarLugares, diaHoy, FUENTE, type Lugar } from './lugares'
-import { MapaLienzo, type PinMapa } from './mapa-lienzo'
+import { MapaLienzo, type PinMapa, type Vista } from './mapa-lienzo'
 import { FormaTipo, ORDEN_TIPOS, TIPO_DE_CATEGORIA, TIPOS, type Tipo } from './tipos'
 import './mapa.css'
 
 type Yo = { lat: number; lon: number; real: boolean }
 type Enfoque = { id: string; lat: number; lon: number; seq: number }
+type Encuadre = { vista: Vista; seq: number }
 type Visible = Lugar & { tipo: Tipo; km: number; abierto: boolean }
 
 const TODOS_LOS_DIAS = Object.keys(DIAS).length
@@ -60,7 +61,18 @@ export function MapaMercados() {
   const [mensajeUbicacion, setMensajeUbicacion] = useState<string | null>(null)
   const [elegido, setElegido] = useState<string | null>(null)
   const [enfoque, setEnfoque] = useState<Enfoque | null>(null)
+  const [encuadre, setEncuadre] = useState<Encuadre | null>(null)
   const [mostrar, setMostrar] = useState(POR_PAGINA)
+
+  // Pedir ubicación al montar; si el usuario acepta, se activa el zoom al lugar más cercano
+  useEffect(() => {
+    if (!navigator.geolocation) return
+    navigator.geolocation.getCurrentPosition(
+      (p) => setYo({ lat: p.coords.latitude, lon: p.coords.longitude, real: true }),
+      () => {}, // denegada o timeout — seguimos desde el Zócalo sin mostrar error
+      { timeout: 8000 },
+    )
+  }, [])
 
   const hoy = diaHoy()
   const todos = useMemo(() => lugares.data ?? [], [lugares.data])
@@ -131,6 +143,34 @@ export function MapaMercados() {
     )
   }
 
+  // Cuando llega la ubicación real y los lugares ya están cargados, encuadrar yo + lugar más cercano
+  useEffect(() => {
+    if (!yo.real || todos.length === 0) return
+    let mejor: Lugar | null = null
+    let mejorKm = Infinity
+    for (const l of todos) {
+      const km = distanciaKm(yo, { lat: l.lat, lon: l.lng })
+      if (km < mejorKm) {
+        mejor = l
+        mejorKm = km
+      }
+    }
+    if (!mejor) return
+    const yoP = proyecta(yo.lat, yo.lon)
+    const lP = proyecta(mejor.lat, mejor.lng)
+    const minX = Math.min(yoP.x, lP.x)
+    const maxX = Math.max(yoP.x, lP.x)
+    const minY = Math.min(yoP.y, lP.y)
+    const maxY = Math.max(yoP.y, lP.y)
+    const dx = maxX - minX
+    const dy = maxY - minY
+    const pad = Math.max(dx, dy) * 0.35 + 40
+    const vista: Vista = { x: minX - pad, y: minY - pad, w: dx + pad * 2, h: dy + pad * 2 }
+    setEncuadre((prev) => ({ vista, seq: (prev?.seq ?? 0) + 1 }))
+  // Correr solo cuando llega la ubicación real o terminan de cargar los lugares
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [yo.real, yo.lat, yo.lon, todos])
+
   const cerca = visibles[0]
   const dondeYo = yo.real ? 'tu ubicación' : 'el Zócalo (activa tu ubicación para afinar)'
 
@@ -180,7 +220,7 @@ export function MapaMercados() {
 
       {lugares.data && (
         <>
-          <MapaLienzo pines={pines} yo={yo} elegido={elegido} enfoque={enfoque} onElegir={(id) => elegir(id, false)} />
+          <MapaLienzo pines={pines} yo={yo} elegido={elegido} enfoque={enfoque} encuadre={encuadre} onElegir={(id) => elegir(id, false)} />
 
           <div className="mapa-resumen" aria-live="polite">
             {cerca ? (

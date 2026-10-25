@@ -28,6 +28,7 @@ const VISTA_DETALLE = 420
 /** Conserva el centro de la vista y ajusta su proporción al lienzo para que no se deforme. */
 function ajustaAspecto(v: Vista, tam: Tam): Vista {
   const r = tam.w / Math.max(1, tam.h)
+  if (!(r > 0) || !(v.w > 0) || !(v.h > 0) || !Number.isFinite(v.w + v.h)) return v
   const cx = v.x + v.w / 2
   const cy = v.y + v.h / 2
   let w = v.w
@@ -61,6 +62,8 @@ export function MapaLienzo({ pines, yo, elegido, enfoque, encuadre, onElegir }: 
     const el = svgRef.current
     if (!el) return
     const medir = () => {
+      // Oculto (pestaña en segundo plano, webview sin mostrar) mide 0: con eso la vista se vuelve Infinity
+      if (!el.clientWidth || !el.clientHeight) return
       const nuevo = { w: el.clientWidth, h: el.clientHeight }
       tamRef.current = nuevo
       setTam(nuevo)

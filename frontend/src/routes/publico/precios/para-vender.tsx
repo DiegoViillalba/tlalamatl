@@ -1,6 +1,7 @@
 // Vista del proveedor y del comerciante: dónde hay demanda y cómo colocar el producto.
 import { Flame, Leaf, Store } from 'lucide-react'
 import type { PrecioProducto } from '@/api'
+import { ImagenProducto } from '@/components/imagen-producto'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
@@ -47,11 +48,14 @@ export function TarjetaVender({
     <Card size="sm">
       <CardContent className="space-y-3">
         <div className="flex items-start justify-between gap-2">
-          <div>
-            <h3 className="text-base font-semibold">{p.nombre}</h3>
-            <p className="text-xs text-muted-foreground">
-              {CATEGORIAS_PRODUCTO[p.categoria] ?? p.categoria} · por {p.unidad}
-            </p>
+          <div className="flex min-w-0 flex-1 items-center gap-3">
+            <ImagenProducto nombre={p.nombre} className="size-14" />
+            <div>
+              <h3 className="text-base font-semibold">{p.nombre}</h3>
+              <p className="text-xs text-muted-foreground">
+                {CATEGORIAS_PRODUCTO[p.categoria] ?? p.categoria} · por {p.unidad}
+              </p>
+            </div>
           </div>
           {altaDemanda(p) && (
             <Badge variant="destructive">

@@ -32,7 +32,17 @@ export const FUENTE: Record<Categoria, string> = {
 }
 
 export function cargarLugares(): Promise<Lugar[]> {
-  return import('./lugares-datos').then((m) => m.LUGARES)
+  return import('./lugares-datos').then((m) => idsUnicos(m.LUGARES))
+}
+
+/** La fuente repite la clave de dos mercados que comparten domicilio (mp-85, mp-171); el segundo recibe un sufijo. */
+function idsUnicos(lugares: Lugar[]): Lugar[] {
+  const vistos = new Map<string, number>()
+  return lugares.map((l) => {
+    const n = (vistos.get(l.id) ?? 0) + 1
+    vistos.set(l.id, n)
+    return n === 1 ? l : { ...l, id: `${l.id}-${n}` }
+  })
 }
 
 const DIA_DE: Record<string, Dia> = { Mon: 'lun', Tue: 'mar', Wed: 'mie', Thu: 'jue', Fri: 'vie', Sat: 'sab', Sun: 'dom' }

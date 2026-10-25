@@ -36,7 +36,8 @@ Tlalamatl **no es un e-commerce, es una plataforma de contacto entre personas**:
   - El cliente guarda favoritos y deja comentarios.
   - El comerciante y el proveedor administran sus datos y **sus precios**.
   Al intentar una acción personal sin sesión, se pide entrar y luego se regresa al mismo lugar.
-- **Login demo sin contraseña (`/entrar`):** lista los usuarios sembrados, agrupados por rol. Al elegir uno se obtiene un JWT (`sub`, `rol`) que se guarda en `localStorage`.
+- **Login demo sin contraseña (`/entrar`):** lista los usuarios sembrados, agrupados por rol. Al elegir uno se obtiene un JWT (`sub`, `rol`) que se guarda en `localStorage`. Se mantiene para la demo frente al jurado.
+- **Login por correo (`/entrar`, Supabase Auth, opcional):** sin contraseña, con un código de un solo uso que llega al correo. Se usa código y no magic link porque un link se abre fuera de la webview de la App CDMX. Supabase solo autentica: los usuarios y su rol viven en nuestra base. Al primer ingreso, `POST /auth/vincular` liga la cuenta (`Usuario.auth_id`) al usuario con el mismo email o crea un cliente. El backend valida el JWT de Supabase con el JWKS del proyecto. Si no están las variables de entorno, solo aparece el login demo.
 - **Guard por rol:** `/cliente/*`, `/comercio/*` y `/proveedor/*` solo los ve el rol correspondiente. Sin sesión se va a `/entrar`; con otro rol se va al inicio de ese rol.
 
 ### Origen de los precios
@@ -60,6 +61,7 @@ Tlalamatl **no es un e-commerce, es una plataforma de contacto entre personas**:
 | Tabla `ProductoBase` (nombre único, unidad, categoría, `canasta_basica`, `meses_temporada`) y `producto_base_id` opcional en `Producto` y `OfertaProveedor` | Agrupar precios por producto, canasta básica y temporada | Público, `rol/comercio`, `rol/proveedor` | ✅ en modelo y seed |
 | Tabla `PrecioHistorico` (producto base, fecha, menudeo promedio/mínimo, mayoreo promedio/mínimo, n de muestras) | Historial semanal de precios y canasta sugerida | Público | ✅ en modelo y seed (12 semanas por producto, con patrón de temporada y ruido determinista; la última semana coincide con los precios actuales) |
 | `RutaEntrega`, `SolicitudFlete` y `ruta_id` en `OrdenAbasto` | Fletes compartidos | `rol/proveedor`, `rol/comercio` | ✅ en modelo y seed (ver "Fletes compartidos") |
+| `auth_id` (opcional, único) en `Usuario` | Ligar la cuenta de Supabase Auth | Todos | ✅ en modelo (requiere `make seed`) |
 
 En el seed, los teléfonos son **ficticios**: tienen la forma `5500xxxxxx`, un rango que en la CDMX no se asigna. Nunca se usan números reales. Un puesto (Pollería El Güero) no tiene WhatsApp, para probar ese caso en la ficha.
 
@@ -145,7 +147,8 @@ solicitada ──► confirmada ──► enviada ──► recibida
 ## Fuera de alcance
 
 - Carrito, pagos en línea, checkout y facturación.
-- Contraseñas, registro de usuarios, recuperación de cuenta y auth real.
+- Contraseñas y recuperación de cuenta (el login real es solo por código de correo).
+- Registro de comerciantes y proveedores desde la app: se dan de alta en la base y luego entran con su correo.
 - Envíos o logística real.
 - Notificaciones push y tiempo real (websockets). Basta con refrescar o re-consultar.
 - Integración real con la App CDMX: por ahora solo debe ser cargable como webview.
@@ -165,6 +168,7 @@ solicitada ──► confirmada ──► enviada ──► recibida
 | GET | `/auth/usuarios-demo` | `authUsuariosDemo` | ✅ hecho |
 | POST | `/auth/demo-login` | `authDemoLogin` | ✅ hecho |
 | GET | `/auth/yo` | `authYo` | ✅ hecho |
+| POST | `/auth/vincular` | `authVincularCuenta` | ✅ hecho; requiere el JWT de Supabase |
 | GET | `/salud` | `sistemaSalud` | ✅ hecho |
 | GET | `/publico/comercios?categoria&alcaldia&abierto_hoy` | `publicoListarComercios` | ✅ hecho; incluye `telefono` y `whatsapp` |
 | GET | `/publico/comercios/{id}` | `publicoObtenerComercio` | ✅ hecho; incluye `telefono` y `whatsapp` |

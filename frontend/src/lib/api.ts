@@ -1,15 +1,15 @@
 // Configuración del cliente generado (src/api/). Archivo COMPARTIDO.
 import { client } from '@/api/client.gen'
-import { guardarSesion, obtenerSesion } from '@/lib/sesion'
+import { cerrarSesion, obtenerSesion, tokenActual } from '@/lib/sesion'
 
 client.setConfig({
   baseUrl: import.meta.env.VITE_API_URL ?? 'http://localhost:8000',
-  auth: () => obtenerSesion()?.token,
+  auth: tokenActual,
 })
 
 // Token vencido o usuario borrado (p. ej. tras `make seed`): volver a la pantalla de entrada.
 client.interceptors.response.use((respuesta) => {
-  if (respuesta.status === 401 && obtenerSesion()) guardarSesion(null)
+  if (respuesta.status === 401 && obtenerSesion()) cerrarSesion()
   return respuesta
 })
 

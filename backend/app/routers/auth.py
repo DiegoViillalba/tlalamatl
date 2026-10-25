@@ -3,9 +3,10 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import func
 from sqlmodel import SQLModel, select
 
-from app.auth import crear_token, usuario_actual
+from app.auth import ClaimsActuales, crear_token, es_de_supabase, usuario_actual
 from app.db import SessionDep
 from app.models import Comercio, Proveedor, Rol, Usuario
 
@@ -75,4 +76,27 @@ def demo_login(entrada: DemoLoginEntrada, session: SessionDep) -> DemoLoginRespu
 
 @router.get("/yo")
 def yo(usuario: Annotated[Usuario, Depends(usuario_actual)]) -> Usuario:
+    return usuario
+
+
+@router.post("/vincular")
+def vincular_cuenta(claims: ClaimsActuales, session: SessionDep) -> Usuario:
+    """Primer ingreso por correo: liga la cuenta de Supabase con el Usuario del mismo email o crea un cliente."""
+    if not es_de_supabase(claims):
+        raise HTTPException(400, "Solo aplica a cuentas que entraron por correo")
+    usuario = session.exec(select(Usuario).where(Usuario.auth_id == claims["sub"])).first()
+    if usuario:
+        return usuario
+    email = (claims.get("email") or "").strip().lower()
+    if not email:
+        raise HTTPException(400, "La cuenta no tiene correo")
+    usuario = session.exec(select(Usuario).where(func.lower(Usuario.email) == email)).first()
+    if usuario is None:
+        usuario = Usuario(nombre=email.split("@")[0], email=email, rol=Rol.cliente, alcaldia="")
+    elif usuario.auth_id is not None:
+        raise HTTPException(409, "Ese correo ya está ligado a otra cuenta")
+    usuario.auth_id = claims["sub"]
+    session.add(usuario)
+    session.commit()
+    session.refresh(usuario)
     return usuario

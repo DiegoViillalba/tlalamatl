@@ -4,7 +4,7 @@ import { Link, NavLink, Outlet, useNavigate } from 'react-router'
 import { useQueryClient } from '@tanstack/react-query'
 import { Marca } from '@/components/marca'
 import { Button } from '@/components/ui/button'
-import { guardarSesion, useSesion } from '@/lib/sesion'
+import { cerrarSesion, useSesion } from '@/lib/sesion'
 import { ROLES } from '@/lib/formato'
 import { cn } from '@/lib/utils'
 
@@ -17,7 +17,7 @@ export function LayoutRol({ nav }: { nav: ItemNav[] }) {
   const queryClient = useQueryClient()
 
   function salir() {
-    guardarSesion(null)
+    cerrarSesion()
     queryClient.clear()
     navegar('/')
   }

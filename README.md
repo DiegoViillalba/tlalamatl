@@ -40,7 +40,8 @@ El login es un **demo sin contraseña**: eliges un usuario sembrado por rol. Sol
 | Proveedor: órdenes, ofertas, compradores y fletes compartidos | ✅ Hecho |
 | Comerciante: tarjeta de "Mi puesto" | ✅ Hecho |
 | Comerciante: editar precios, ver proveedores, pedir abasto y sumarse a fletes | 🚧 En construcción (el modelo y las reglas ya existen) |
-| Backend: 129 pruebas automatizadas | ✅ Pasan |
+| Login por correo sin contraseña (código de un solo uso, Supabase Auth), además del login demo | ✅ Hecho |
+| Backend: 136 pruebas automatizadas | ✅ Pasan |
 
 ## Datos
 
@@ -104,6 +105,16 @@ Al cambiar dependencias del backend, regenera `requirements.txt` (lo lee Vercel)
 ```bash
 cd backend && uv export --no-dev --no-hashes --no-emit-project --no-editable -o ../requirements.txt
 ```
+
+### Login por correo (opcional)
+
+Sin configurar nada funciona el login demo. Para activar el login sin contraseña (código de un solo uso por correo, con Supabase Auth):
+
+1. Copia `backend/.env.example` a `backend/.env` y `frontend/.env.example` a `frontend/.env.local`, y llena las variables de Supabase.
+2. En Supabase, edita las plantillas de correo **Confirm signup** (primer ingreso) y **Magic Link** (los siguientes) en *Authentication → Emails → Templates* para que muestren el código `{{ .Token }}`.
+3. Configura un SMTP propio en *Authentication → Emails → SMTP Settings*. El que trae Supabase tiene un límite muy bajo de envíos.
+
+Al primer ingreso, el correo se liga al usuario que ya tenga ese email. Si no existe, se crea como cliente.
 
 ### Cómo trabajamos
 

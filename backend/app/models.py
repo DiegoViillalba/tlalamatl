@@ -104,6 +104,8 @@ class Usuario(SQLModel, table=True):
     email: str = Field(unique=True)
     rol: Rol
     alcaldia: str
+    # `sub` del usuario en Supabase Auth; None para los usuarios demo que nunca entraron por correo.
+    auth_id: str | None = Field(default=None, unique=True, index=True)
 
 
 class Comercio(SQLModel, table=True):

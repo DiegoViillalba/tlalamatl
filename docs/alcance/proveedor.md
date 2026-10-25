@@ -2,11 +2,11 @@
 
 > Estado: BORRADOR — editado por el equipo. Este archivo manda sobre cualquier suposición del agente.
 
-Dueña: rama `rol/proveedor`. También lee `docs/alcance/compartido.md`.
+Dueña: rama `rol/proveedor`. También lee `docs/alcance/compartido.md`; el mapa y el dashboard de precios están definidos ahí.
 
 ## Objetivo
 
-Que productores, mayoristas y almacenes publiquen sus ofertas de mayoreo y atiendan las órdenes de abasto de los comercios de la CDMX sin intermediarios innecesarios.
+Que productores, mayoristas y almacenes publiquen sus ofertas de mayoreo, atiendan las órdenes de abasto de los comercios de la CDMX sin intermediarios innecesarios y abaraten sus entregas con rutas compartidas.
 
 ## Usuario y contexto de uso
 
@@ -15,13 +15,15 @@ Que productores, mayoristas y almacenes publiquen sus ofertas de mayoreo y atien
 
 ## Funcionalidades incluidas (MVP)
 
-- **Mis ofertas:** CRUD de ofertas (producto genérico, unidad, precio de mayoreo, cantidad mínima y disponible sí/no).
+- **Mis ofertas:** CRUD de ofertas (producto genérico, unidad, precio de mayoreo, cantidad mínima y disponible sí/no). **Sus precios de mayoreo alimentan el dashboard de precios** público.
 - **Órdenes recibidas:** lista por estado con acciones: confirmar o rechazar una `solicitada` y enviar una `confirmada`.
-- **Perfil:** nombre, tipo (productor, mayorista o almacén) y zona. *Hecho como tarjeta en Órdenes.*
+- **Mis compradores:** comercios que le compran de manera activa, es decir, con órdenes recientes no rechazadas.
+- **Rutas compartidas de entrega:** agrupar órdenes de varios comerciantes cercanos en una sola ruta de entrega para abaratar costos.
+- **Perfil:** nombre, tipo (productor, mayorista o almacén), zona, **teléfono y WhatsApp**. Es lo que se ve en su ficha pública. *Hecho como tarjeta en Órdenes, solo lectura.*
+- **Contactar al comercio:** botones Llamar y WhatsApp en cada orden y en "Mis compradores".
 
 ## Fuera de alcance
 
-- Logística, rutas o rastreo de envíos.
 - Facturación y cobranza.
 - Inventario detallado del proveedor (solo "disponible sí/no").
 - Chat con el comercio.
@@ -29,30 +31,39 @@ Que productores, mayoristas y almacenes publiquen sus ofertas de mayoreo y atien
 ## Pantallas
 
 1. **Órdenes (`/proveedor`):** tarjeta de perfil y lista de órdenes por estado con acciones. *Versión inicial hecha solo con el perfil.*
-2. **Detalle de orden (`/proveedor/ordenes/:id`):** comercio, items, total y acciones. *Por hacer.*
-3. **Mis ofertas (`/proveedor/ofertas`):** lista y formulario. *Por hacer (hoy es un marcador `Pendiente`).*
+2. **Mis ofertas (`/proveedor/ofertas`):** lista y formulario. *Por hacer (hoy es un marcador `Pendiente`).*
+3. **Mis compradores (`/proveedor/compradores`):** comercios activos con su categoría, alcaldía y última orden. *Por hacer.*
+4. **Rutas (`/proveedor/rutas`):** rutas sugeridas (órdenes confirmadas agrupadas por cercanía) y rutas creadas. *Por hacer.*
 
 ## Endpoints que consume
 
 | Método | Ruta | operationId (TS) | Estado |
 |---|---|---|---|
 | GET | `/proveedor/mi-perfil` | `proveedorMiPerfil` | ✅ hecho |
+| PATCH | `/proveedor/mi-perfil` | `proveedorActualizarMiPerfil` | ⏳ por crear (zona, teléfono, WhatsApp) |
 | GET | `/proveedor/ofertas` | `proveedorListarOfertas` | ⏳ por crear |
 | POST | `/proveedor/ofertas` | `proveedorCrearOferta` | ⏳ por crear |
 | PATCH | `/proveedor/ofertas/{id}` | `proveedorActualizarOferta` | ⏳ por crear |
 | DELETE | `/proveedor/ofertas/{id}` | `proveedorEliminarOferta` | ⏳ por crear |
-| GET | `/proveedor/ordenes` | `proveedorListarOrdenes` | ⏳ por crear |
-| POST | `/proveedor/ordenes/{id}/estado` | `proveedorAvanzarOrden` | ⏳ por crear |
+| GET | `/proveedor/ordenes?estado` | `proveedorListarOrdenes` | ⏳ por crear |
+| POST | `/proveedor/ordenes/{id}/estado` | `proveedorAvanzarOrden` | ⏳ por crear; cuerpo `{ estado }`, validado con `validar_orden()` |
+| GET | `/proveedor/compradores` | `proveedorListarCompradores` | ⏳ por crear: comercios con órdenes no rechazadas en los últimos 30 días |
+| GET | `/proveedor/rutas/sugeridas` | `proveedorSugerirRutas` | ⏳ por crear: órdenes `confirmadas` agrupadas por alcaldía |
+| POST | `/proveedor/rutas` | `proveedorCrearRuta` | ⏳ por crear; cuerpo `{ orden_ids }`. Requiere una tabla `RutaEntrega` y `ruta_id` en `OrdenAbasto` (cambio en `models.py`, en `main`). |
+| GET | `/proveedor/rutas` | `proveedorListarRutas` | ⏳ por crear |
 
 ## Criterios de aceptación
 
-- [ ] Una oferta marcada como no disponible deja de aparecer en "Abastecerme" del comercio.
+- [ ] Una oferta marcada como no disponible deja de aparecer en "Proveedores" del comercio.
 - [ ] Solo se ofrecen las acciones válidas para el estado de la orden; una inválida responde 409.
-- [ ] Un proveedor solo ve y modifica sus propias ofertas y órdenes (403/404 para las ajenas).
-- [ ] Paso 4 del flujo demo: confirmar y enviar la orden del comercio.
+- [ ] Un proveedor solo ve y modifica sus propias ofertas, órdenes y rutas (403/404 para las ajenas).
+- [ ] "Mis compradores" lista solo los comercios con órdenes activas de este proveedor.
+- [ ] Se puede crear una ruta con órdenes confirmadas de 2 o más comercios, y la ruta muestra sus paradas.
+- [ ] Cambiar el precio de mayoreo de una oferta se refleja en el dashboard de precios.
+- [ ] Paso 4 del flujo demo (`compartido.md`): el proveedor ve los comercios que le compran de manera activa.
 
 ## Preguntas abiertas
 
-- ¿El proveedor puede ajustar la cantidad o el precio al confirmar?
-- ¿Mostramos datos de contacto del comercio en el detalle de orden?
-- ¿Las órdenes rechazadas piden un motivo?
+- Para las rutas, ¿basta con agrupar por alcaldía y mostrar la lista de paradas, o se espera dibujar la ruta en el mapa?
+- ¿Cómo se reparte el ahorro de la ruta compartida entre los comerciantes? ¿Se muestra un costo estimado?
+- ¿Qué cuenta como comprador "activo": órdenes en los últimos 30 días u órdenes en curso?

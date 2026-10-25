@@ -2,11 +2,71 @@
 
 *"Mapa de tierra"* en náhuatl. Es un prototipo de hackathon para la CDMX, pensado para vivir dentro de la App CDMX como webview.
 
-**No es una tienda en línea, es una plataforma de contacto.** Ayuda a que se encuentren quienes compran, quienes venden en tianguis, mercados y la Central de Abasto, y quienes producen o surten al mayoreo. Cualquiera puede abrir el **mapa** y el **dashboard de precios** sin cuenta. La compra se hace en persona.
+### 👉 Demo en vivo: **[tlalamatl.vercel.app](https://tlalamatl.vercel.app/)**
 
-Es una sola app; el login demo por rol solo hace falta para favoritos, comentarios y para que comerciantes y proveedores administren sus datos y precios. Los lugares del mapa son reales (Datos Abiertos CDMX); los puestos, precios y contactos son mock. Antes de contribuir, lee **[AGENTS.md](AGENTS.md)**.
+Se abre en el celular o en el navegador, sin instalar nada y sin cuenta. En desktop la app se muestra dentro de un marco de teléfono.
 
-## Levantarlo en menos de 5 minutos
+## El problema y la idea
+
+En la CDMX hay más de 1,500 tianguis, mercados públicos y mercados sobre ruedas, además de la Central de Abasto. Aun así, es difícil saber cuál abre hoy cerca de ti, cuánto cuesta lo que necesitas o dónde está más barato. Quien vende tampoco sabe dónde hay demanda, y quien produce al mayoreo depende de intermediarios.
+
+**Tlalamatl no es una tienda en línea, es una plataforma de contacto.** Conecta a quienes compran, a quienes venden en tianguis y mercados, y a quienes producen o surten al mayoreo. La app muestra quién vende qué, dónde, cuándo y a qué precio. La compra se hace en persona, y el contacto es directo por **Llamar** o **WhatsApp**.
+
+## Qué puedes probar (guion de 3 minutos)
+
+1. **Sin cuenta, el mapa (`/`):** el mapa de la CDMX con **1,518 lugares reales** (1,137 tianguis, 329 mercados públicos, 51 mercados sobre ruedas y la Central de Abasto). Puedes buscar, filtrar por tipo o por "Abierto hoy" y centrar el mapa en tu ubicación. Al tocar un lugar se abre su ficha con puestos, productos, precios y botones de contacto.
+2. **Sin cuenta, los precios (`/precios`):** el dashboard de precios.
+   - *Para comprar:* productos de temporada y canasta básica, con precio mínimo y promedio y el comercio más barato.
+   - **Canasta de temporada interactiva:** agregas o quitas productos y ves el total, el ahorro y a dónde ir a comprar.
+   - **Historial de 12 semanas** de cada producto.
+   - *Para vender:* precios de mayoreo y demanda, para comerciantes y productores.
+3. **Cliente:** toca *Entrar* y elige un cliente demo. Puedes guardar mercados en **favoritos** (con la vista "Cerca de mí") y **dejar comentarios** que aparecen en la ficha pública.
+4. **Proveedor:** entra como *Distribuidora Hortícola del Valle*.
+   - **Órdenes de abasto:** confírmalas, recházalas o envíalas.
+   - **Mis ofertas:** administra tus ofertas de mayoreo, que alimentan el dashboard de precios.
+   - **Mis compradores:** consulta los comercios activos.
+   - **Fletes compartidos:** junta pedidos de varios comercios cercanos en una sola ruta de entrega, y el costo del flete se reparte entre ellos.
+
+El login es un **demo sin contraseña**: eliges un usuario sembrado por rol. Solo hace falta para favoritos y comentarios, y para que comerciantes y proveedores administren sus datos.
+
+## Estado
+
+| Parte | Estado |
+|---|---|
+| Mapa público con lugares reales, búsqueda, filtros, "abierto hoy" y ubicación | ✅ Hecho |
+| Ficha del lugar con puestos, precios y contacto (Llamar / WhatsApp) | ✅ Hecho |
+| Dashboard de precios: temporada, canasta básica, canasta interactiva e historial | ✅ Hecho |
+| Cliente: favoritos ("Cerca de mí" y "Mis favoritos") y comentarios | ✅ Hecho |
+| Proveedor: órdenes, ofertas, compradores y fletes compartidos | ✅ Hecho |
+| Comerciante: tarjeta de "Mi puesto" | ✅ Hecho |
+| Comerciante: editar precios, ver proveedores, pedir abasto y sumarse a fletes | 🚧 En construcción (el modelo y las reglas ya existen) |
+| Login por correo sin contraseña (código de un solo uso, Supabase Auth), además del login demo | ✅ Hecho |
+| Backend: 136 pruebas automatizadas | ✅ Pasan |
+
+## Datos
+
+- **Lugares reales:** tianguis, mercados públicos y mercados sobre ruedas de SEDECO ([Datos Abiertos CDMX](https://datos.cdmx.gob.mx/)), más la Central de Abasto de OpenStreetMap. La ficha cita la fuente.
+- **Mock de demostración:** los puestos, productos, precios y contactos. Los precios se basan en precios reales y el historial de 12 semanas sigue un patrón de temporada. Los teléfonos son ficticios (`5500xxxxxx`, un rango que la CDMX no asigna).
+- **Fotos ilustrativas** de productos de Wikimedia Commons con licencias abiertas. Sus créditos aparecen en cada pantalla que las usa.
+- Tlalamatl tiene identidad propia: no usa logos ni la identidad gráfica oficial del Gobierno de la CDMX.
+
+## Stack
+
+- **Backend:** Python, FastAPI, SQLModel, SQLite y pytest. Las máquinas de estado de órdenes y rutas se validan en el servidor; una transición inválida responde 409.
+- **Frontend:** Vite, React, TypeScript estricto, Tailwind v4, shadcn/ui, TanStack Query y React Router. Es mobile-first, todo en español de México y con pesos MXN. El cliente de la API se genera desde OpenAPI.
+- **Despliegue:** Vercel ([tlalamatl.vercel.app](https://tlalamatl.vercel.app/)).
+
+## Equipo
+
+Diego Villalba, Fernanda Pineda, Sebastián Díaz y Rick Hernández.
+
+---
+
+## Para desarrollar
+
+Antes de contribuir, lee **[AGENTS.md](AGENTS.md)**.
+
+### Levantarlo en menos de 5 minutos
 
 Requisitos: [uv](https://docs.astral.sh/uv/), Node 20+ y `make`.
 
@@ -16,6 +76,12 @@ make dev       # API en http://localhost:8000 (docs en /docs) y app en http://lo
 ```
 
 `make dev` siembra la base la primera vez. Para reiniciar los datos demo en cualquier momento, usa `make seed`.
+
+| Comando | Qué hace |
+|---|---|
+| `make test` | Corre pytest |
+| `make gen-api` | Regenera `frontend/src/api/` después de cambiar el backend |
+| `make check` | Corre todo lo anterior más typecheck y build (antes de mergear) |
 
 ### Login por correo (opcional)
 
@@ -27,15 +93,7 @@ Sin configurar nada funciona el login demo. Para activar el login sin contraseñ
 
 Al primer ingreso, el correo se liga al usuario que ya tenga ese email. Si no existe, se crea como cliente.
 
-Otros comandos:
-
-| Comando | Qué hace |
-|---|---|
-| `make test` | Corre pytest |
-| `make gen-api` | Regenera `frontend/src/api/` después de cambiar el backend |
-| `make check` | Corre todo lo anterior más typecheck y build (antes de mergear) |
-
-## Cómo trabajamos
+### Cómo trabajamos
 
 Cada integrante tiene un giro y su propia rama:
 
@@ -53,28 +111,13 @@ git merge main            # sincroniza la zona compartida
 make gen-api              # regenera el cliente API (no se versiona)
 ```
 
-## Editar el alcance de cada interfaz
+### Alcance de cada interfaz
 
-El alcance vive en `docs/alcance/`:
+El alcance vive en `docs/alcance/` y **manda** sobre cualquier suposición. Los agentes de IA lo leen antes de trabajar en cada rol.
 
 - [cliente.md](docs/alcance/cliente.md)
 - [comercio.md](docs/alcance/comercio.md)
 - [proveedor.md](docs/alcance/proveedor.md)
-- [compartido.md](docs/alcance/compartido.md)
+- [compartido.md](docs/alcance/compartido.md): mapa, dashboard de precios, login, estados y fletes compartidos
 
-Todos usan la misma plantilla: Objetivo, Usuario, MVP, Fuera de alcance, Pantallas, Endpoints, Criterios y Preguntas abiertas. **Estos documentos mandan:** los agentes de IA los leen antes de trabajar en cada rol. `frontend/src/routes/<rol>/CLAUDE.md` los importa automáticamente.
-
-Edítalos en tu rama como cualquier archivo. Si un cambio de código altera el alcance, actualiza el doc en el mismo commit.
-
-## Guion del flujo demo
-
-Esto funciona de punta a punta cuando las 3 ramas estén integradas en `main`. La fuente es `docs/alcance/compartido.md`.
-
-1. **Sin cuenta:** se abre la app y aparece el mapa de la CDMX con mercados, tianguis y proveedores. Tocar uno abre su ficha. Desde ahí se llega al **dashboard de precios** (temporada y canasta básica).
-2. **Cliente:** *Entrar* como cliente, guardar tianguis o mercados en **favoritos** y **dejar un comentario**.
-3. **Comerciante:** entrar como el comerciante de *Verduras Doña Mary*, actualizar el **precio** de un producto y ver a los **proveedores**. Su precio se refleja en el dashboard.
-4. **Proveedor:** entrar como *Distribuidora Hortícola del Valle* y ver los **comercios que le compran** de manera activa.
-
-## Estado actual
-
-El repo tiene el **andamiaje**: modelo de datos completo, auth demo, máquinas de estado, seed, catálogo público, login, layouts por rol y una pantalla de ejemplo por rol que consume la API. Lo que falta de cada interfaz aparece como ⏳ en su doc de alcance y como marcador "Pantalla por construir" en la app.
+Todos usan la misma plantilla: Objetivo, Usuario, MVP, Fuera de alcance, Pantallas, Endpoints, Criterios y Preguntas abiertas. Si un cambio de código altera el alcance, actualiza el doc en el mismo commit.

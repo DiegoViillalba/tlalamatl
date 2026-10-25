@@ -53,12 +53,14 @@ _(por definir)_
 
 ## Pantallas
 
-1. **Inicio (`/comercio`):** tarjeta del puesto (como se ve en el mapa) con "Editar" y comentarios recientes. *Hecha la versión inicial con la tarjeta del puesto.*
-2. **Mis precios (`/comercio/productos`):** lista de productos con precio editable rápido y formulario para agregar. *Por hacer.*
-3. **Proveedores (`/comercio/proveedores`):** proveedores con sus ofertas y botones "Solicitar abasto", Llamar y WhatsApp. *Por hacer.*
-4. **Mis solicitudes (`/comercio/solicitudes`):** órdenes de abasto enviadas con su estado; marcar `recibida`. *Por hacer.*
+1. **Inicio (`/comercio`):** tarjeta del puesto (como se ve en el mapa) con "Editar" y comentarios recientes. *Hecha: tarjeta del puesto y comentarios recientes (reales, vía `publicoListarComentarios`); falta "Editar".*
+2. **Mis precios (`/comercio/productos`):** lista de productos con precio editable rápido y formulario para agregar. *Mock: lista los productos reales (`publicoListarProductos`); editar, agregar y borrar solo cambian el estado local.*
+3. **Proveedores (`/comercio/proveedores`):** proveedores con sus ofertas y botones "Solicitar abasto", Llamar y WhatsApp. *Mock: proveedores y ofertas copiados del seed en `routes/comercio/demo.tsx`.*
+4. **Mis solicitudes (`/comercio/solicitudes`):** órdenes de abasto enviadas con su estado; marcar `recibida`. *Mock: solicitudes de ejemplo más las creadas en la sesión, en memoria.*
 
 La navegación inferior queda así: Inicio, Mis precios, Proveedores, Solicitudes. Reemplaza a "Inventario", "Pedidos" y "Abastecerme" del andamiaje.
+
+> Las pantallas mock muestran un aviso "Modo demo". Al crear cada endpoint de la tabla siguiente, cambia la pantalla para usarlo y quita su parte de `demo.tsx`.
 
 ## Endpoints que consume
 

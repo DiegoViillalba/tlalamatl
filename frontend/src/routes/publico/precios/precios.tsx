@@ -11,13 +11,19 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { CATEGORIAS_PRODUCTO, mesActual, MESES } from '@/lib/formato'
 import { mensajeError } from '@/lib/api'
+import { Canasta } from './canasta'
+import { HistorialPrecios } from './historial'
 import { ResumenTemporada, TarjetaComprar } from './para-comprar'
 import { ordenarParaVender, TarjetaVender } from './para-vender'
 
 type Vista = 'comprar' | 'vender'
 type Filtro = 'temporada' | 'canasta' | 'todo'
 
-const sinAcentos = (texto: string) => texto.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase()
+const sinAcentos = (texto: string) =>
+  texto
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase()
 
 export function Precios() {
   const [vista, setVista] = useState<Vista>('comprar')
@@ -26,6 +32,10 @@ export function Precios() {
   const [busqueda, setBusqueda] = useState('')
   const hoy = mesActual()
   const [mes, setMes] = useState(hoy)
+  const [historial, setHistorial] = useState<{
+    id: number
+    nombre: string
+  } | null>(null)
 
   const consulta = useQuery(publicoPreciosOptions({ query: { mes } }))
   const productos = useMemo(() => consulta.data ?? [], [consulta.data])
@@ -43,13 +53,28 @@ export function Precios() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-xl font-semibold">Precios</h1>
-        <p className="text-sm text-muted-foreground">
-          {vista === 'comprar'
-            ? 'Compra más barato: productos de temporada y canasta básica, y dónde encontrarlos.'
-            : 'Dónde hay demanda y qué está de temporada para colocar tu producto.'}
-        </p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-semibold">Precios</h1>
+          <p className="text-sm text-muted-foreground">
+            {vista === 'comprar'
+              ? 'Compra más barato: productos de temporada y canasta básica, y dónde encontrarlos.'
+              : 'Dónde hay demanda y qué está de temporada para colocar tu producto.'}
+          </p>
+        </div>
+        <Select value={String(mes)} onValueChange={(v) => setMes(Number(v))}>
+          <SelectTrigger className="shrink-0" aria-label="Mes">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {MESES.map((nombre, i) => (
+              <SelectItem key={nombre} value={String(i + 1)}>
+                {nombre}
+                {i + 1 === hoy ? ' (actual)' : ''}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <Tabs value={vista} onValueChange={(v) => setVista(v as Vista)}>
@@ -58,6 +83,8 @@ export function Precios() {
           <TabsTrigger value="vender">Para vender</TabsTrigger>
         </TabsList>
       </Tabs>
+
+      {vista === 'comprar' && <Canasta mes={mes} esActual={mes === hoy} alVerHistorial={setHistorial} />}
 
       {vista === 'comprar' && !consulta.isPending && (
         <ResumenTemporada productos={productos} mes={mes} esActual={mes === hoy} />
@@ -75,20 +102,7 @@ export function Precios() {
             className="h-9 pl-8"
           />
         </div>
-        <div className="grid grid-cols-2 gap-2">
-          <Select value={String(mes)} onValueChange={(v) => setMes(Number(v))}>
-            <SelectTrigger className="w-full" aria-label="Mes">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {MESES.map((nombre, i) => (
-                <SelectItem key={nombre} value={String(i + 1)}>
-                  {nombre}
-                  {i + 1 === hoy ? ' (actual)' : ''}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div>
           <Select value={categoria} onValueChange={setCategoria}>
             <SelectTrigger className="w-full" aria-label="Categoría">
               <SelectValue />
@@ -130,15 +144,24 @@ export function Precios() {
       {consulta.isSuccess && visibles.length === 0 && (
         <p className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
           No hay productos con estos filtros
-          {filtro === 'temporada' ? ` de temporada en ${MESES[mes - 1].toLowerCase()}` : ''}. Prueba con “Todo” u otro mes.
+          {filtro === 'temporada' ? ` de temporada en ${MESES[mes - 1].toLowerCase()}` : ''}. Prueba con “Todo” u otro
+          mes.
         </p>
       )}
 
       {consulta.isSuccess && (
         <div className="space-y-3">
-          {visibles.map((p) => (vista === 'comprar' ? <TarjetaComprar key={p.id} producto={p} /> : <TarjetaVender key={p.id} producto={p} />))}
+          {visibles.map((p) => {
+            const verHistorial = () => setHistorial({ id: p.id, nombre: p.nombre })
+            return vista === 'comprar' ? (
+              <TarjetaComprar key={p.id} producto={p} alVerHistorial={verHistorial} />
+            ) : (
+              <TarjetaVender key={p.id} producto={p} alVerHistorial={verHistorial} />
+            )
+          })}
         </div>
       )}
+      <HistorialPrecios producto={historial} alCerrar={() => setHistorial(null)} />
     </div>
   )
 }

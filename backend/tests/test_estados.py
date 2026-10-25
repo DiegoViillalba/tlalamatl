@@ -1,9 +1,10 @@
 import pytest
 from fastapi import HTTPException
 
-from app.estados import validar_orden, validar_pedido
+from app.estados import validar_orden, validar_pedido, validar_ruta
 from app.models import EstadoOrden as O
 from app.models import EstadoPedido as P
+from app.models import EstadoRuta as R
 
 
 @pytest.mark.parametrize(
@@ -39,4 +40,22 @@ def test_transiciones_validas_orden(actual, nuevo):
 def test_transiciones_invalidas_orden(actual, nuevo):
     with pytest.raises(HTTPException) as e:
         validar_orden(actual, nuevo)
+    assert e.value.status_code == 409
+
+
+@pytest.mark.parametrize(
+    "actual,nuevo",
+    [(R.abierta, R.en_camino), (R.abierta, R.cancelada), (R.en_camino, R.completada)],
+)
+def test_transiciones_validas_ruta(actual, nuevo):
+    validar_ruta(actual, nuevo)
+
+
+@pytest.mark.parametrize(
+    "actual,nuevo",
+    [(R.abierta, R.completada), (R.en_camino, R.cancelada), (R.en_camino, R.abierta), (R.completada, R.en_camino), (R.cancelada, R.abierta)],
+)
+def test_transiciones_invalidas_ruta(actual, nuevo):
+    with pytest.raises(HTTPException) as e:
+        validar_ruta(actual, nuevo)
     assert e.value.status_code == 409

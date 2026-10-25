@@ -58,7 +58,8 @@ Tlalamatl **no es un e-commerce, es una plataforma de contacto entre personas**:
 | Tabla `Favorito` (usuario, comercio; sin repetidos) | Favoritos del cliente | `rol/cliente` | ✅ en modelo y seed |
 | Tabla `Comentario` (usuario, comercio, texto ≤ 500, fecha) | Comentarios en la ficha | `rol/cliente`, `rol/comercio` | ✅ en modelo y seed |
 | Tabla `ProductoBase` (nombre único, unidad, categoría, `canasta_basica`, `meses_temporada`) y `producto_base_id` opcional en `Producto` y `OfertaProveedor` | Agrupar precios por producto, canasta básica y temporada | Público, `rol/comercio`, `rol/proveedor` | ✅ en modelo y seed |
-| `RutaEntrega` y `ruta_id` en `OrdenAbasto` | Rutas compartidas | `rol/proveedor` | ⏳ después |
+| Tabla `PrecioHistorico` (producto base, fecha, menudeo promedio/mínimo, mayoreo promedio/mínimo, n de muestras) | Historial semanal de precios y canasta sugerida | Público | ✅ en modelo y seed (12 semanas por producto, con patrón de temporada y ruido determinista; la última semana coincide con los precios actuales) |
+| `RutaEntrega`, `SolicitudFlete` y `ruta_id` en `OrdenAbasto` | Fletes compartidos | `rol/proveedor`, `rol/comercio` | ✅ en modelo y seed (ver "Fletes compartidos") |
 
 En el seed, los teléfonos son **ficticios**: tienen la forma `5500xxxxxx`, un rango que en la CDMX no se asigna. Nunca se usan números reales. Un puesto (Pollería El Güero) no tiene WhatsApp, para probar ese caso en la ficha.
 
@@ -67,6 +68,32 @@ En el seed, los teléfonos son **ficticios**: tienen la forma `5500xxxxxx`, un r
 - **Layout común:** encabezado con la marca, el nombre del usuario (o "Entrar" si no hay sesión) y "Salir"; contenido con scroll; navegación inferior tipo app.
 - **Simulación de teléfono:** en desktop la app ocupa como máximo 430 px de ancho con marco de teléfono. En móvil o webview ocupa toda la pantalla.
 - **Máquinas de estado validadas en el backend** (`backend/app/estados.py`). Una transición inválida responde 409.
+
+### Fletes compartidos (proveedor ↔ comercios)
+
+Un proveedor agrupa las órdenes **confirmadas** de varios comercios cercanos en una `RutaEntrega` (un solo viaje) y los comercios pueden **pedir sumarse** a una ruta abierta.
+
+- **Ruta:** `proveedor`, `zona`, `fecha` de salida, `costo_flete` (total, MXN), `nota` y `estado`. Las paradas son las `OrdenAbasto` con ese `ruta_id`.
+- **Costo repartido por comercio:** `cuota_flete = costo_flete / comercios distintos de la ruta`, en partes iguales y redondeado a centavos. No se guarda: se calcula al leer, así que cambia cuando entra o sale un comercio.
+- **Estados de la ruta** (`validar_ruta()` en `estados.py`; inválida = 409): `abierta → en_camino → completada`, y `abierta → cancelada`. Solo una ruta `abierta` acepta solicitudes. Al pasar a `en_camino`, las órdenes de la ruta pasan de `confirmada` a `enviada`; al cancelar, las órdenes quedan libres (`ruta_id = null`).
+- **Solicitud de flete (`SolicitudFlete`):** el comercio ofrece una orden suya `confirmada` y sin ruta; nace `pendiente` y el proveedor la `aceptada` (la orden entra a la ruta) o `rechazada`.
+
+| Quién | Transición |
+|---|---|
+| proveedor | crea la ruta con órdenes `confirmadas` suyas y sin ruta; `abierta → en_camino` / `cancelada`; `en_camino → completada` |
+| comercio | crea una solicitud `pendiente` sobre una ruta `abierta` |
+| proveedor | `pendiente → aceptada` / `rechazada` |
+
+**Lado comercio (a implementar en `rol/comercio`; el modelo ya existe):**
+
+| Método | Ruta | Para qué |
+|---|---|---|
+| GET | `/comercio/rutas-abiertas` | Rutas `abiertas` de los proveedores con los que el comercio tiene órdenes `confirmadas` sin ruta; con proveedor, zona, fecha, costo, número de comercios y la cuota estimada si se suma. |
+| POST | `/comercio/rutas/{id}/solicitudes` | Cuerpo `{ orden_id }`. 404 si la ruta u orden no son del caso; 409 si la ruta no está `abierta`, la orden no está `confirmada` o ya tiene ruta o solicitud pendiente. |
+| GET | `/comercio/solicitudes-flete` | Sus solicitudes con estado y la ruta. |
+| DELETE | `/comercio/solicitudes-flete/{id}` | Retira una solicitud `pendiente`. |
+
+Cuota estimada si se suma un comercio nuevo: `costo_flete / (comercios actuales + 1)`. Un comercio que ya está en la ruta no cambia el reparto.
 
 ### Estados de Pedido (cliente → comercio)
 
@@ -126,7 +153,7 @@ solicitada ──► confirmada ──► enviada ──► recibida
 
 1. **Mapa (`/`, público):** mapa con búsqueda, filtros (categoría, "abierto hoy") y lista por distancia. La navegación inferior tiene Mapa, Precios y Entrar (o "Mi espacio" si hay sesión). *Hecho: sin sesión muestra "Entrar" en el encabezado.*
 2. **Ficha interactiva (público):** hoja inferior sobre el mapa con los detalles del comercio o proveedor, sus productos con precio, sus comentarios y los botones **Llamar** y **WhatsApp**. Los botones "Favorito" y "Comentar" piden sesión. *Por hacer.*
-3. **Dashboard de precios (`/precios`, público):** productos de temporada y canasta básica, con precio mínimo y promedio por producto y dónde encontrarlo. Pestañas "Para comprar" y "Para vender" (proveedores y comerciantes). *Hecha.*
+3. **Dashboard de precios (`/precios`, público):** productos de temporada y canasta básica, con precio mínimo y promedio por producto y dónde encontrarlo. Pestañas "Para comprar" y "Para vender" (proveedores y comerciantes). Arriba, en "Para comprar", la **canasta de temporada**: gráfica de barras (más barato vs. promedio) con total en vivo, productos para agregar y quitar (se guarda en `localStorage`), y "Dónde comprar" agrupado por comercio con Llamar/WhatsApp. Al tocar un producto se abre su **historial** de 12 semanas (promedio y mínimo, menudeo o mayoreo, con la temporada marcada). *Hecha.*
 4. **Entrar (`/entrar`):** marca Tlalamatl y una tarjeta "Entrar como…" por rol, con sus usuarios demo y "Volver al mapa". *Hecha.* Las rutas de rol sin sesión redirigen aquí.
 5. **Layout de rol:** encabezado, contenido y navegación inferior (lo usan las 3 interfaces). *Hecho.*
 
@@ -143,6 +170,8 @@ solicitada ──► confirmada ──► enviada ──► recibida
 | GET | `/publico/comercios/{id}/productos` | `publicoListarProductos` | ✅ hecho |
 | GET | `/publico/proveedores` | `publicoListarProveedores` | ⏳ por crear: proveedores con coordenadas, tipo y contacto, para mostrarlos en el mapa. Los lugares reales ya no necesitan endpoint, porque son estáticos en el frontend. |
 | GET | `/publico/precios?temporada&canasta&categoria&mes` | `publicoPrecios` | ✅ hecho: por `ProductoBase`, menudeo y mayoreo (mín/promedio/máx/n), dónde está más barato (comercio y proveedor, con contacto) y demanda por reabasto. Sin login. |
+| GET | `/publico/canasta?mes` | `publicoCanasta` | ✅ hecho: canasta sugerida del mes (canasta básica y de temporada), con precio más barato vs. promedio, comercio donde comprarlo, totales, ahorro y lugares a visitar. Los 8 mejores vienen con `en_canasta`; el resto son candidatos para agregar. |
+| GET | `/publico/precios/{producto_base_id}/historial?semanas=12` | `publicoHistorialPrecios` | ✅ hecho: serie semanal (más antigua primero) de menudeo y mayoreo, promedio y mínimo. 404 si el producto no existe. |
 | GET | `/publico/comercios/{id}/comentarios` | `publicoListarComentarios` | ⏳ por crear (la tabla `Comentario` ya existe). |
 
 ## Criterios de aceptación

@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { CATEGORIAS_PRODUCTO, pesos, TIPOS_PROVEEDOR } from '@/lib/formato'
-import { Contacto } from './comunes'
+import { BotonHistorial, Contacto } from './comunes'
 
 /** Alta demanda: al menos un comercio del producto anda con stock en o por debajo de su mínimo. */
 export function altaDemanda(p: PrecioProducto) {
@@ -34,10 +34,15 @@ function Dato({ etiqueta, valor, nota }: { etiqueta: string; valor: string; nota
   )
 }
 
-export function TarjetaVender({ producto: p }: { producto: PrecioProducto }) {
+export function TarjetaVender({
+  producto: p,
+  alVerHistorial,
+}: {
+  producto: PrecioProducto
+  alVerHistorial: () => void
+}) {
   const { mayoreo, menudeo, demanda, proveedor_mas_barato: proveedor } = p
-  const brecha =
-    mayoreo.promedio != null && menudeo.promedio != null ? menudeo.promedio - mayoreo.promedio : null
+  const brecha = mayoreo.promedio != null && menudeo.promedio != null ? menudeo.promedio - mayoreo.promedio : null
   return (
     <Card size="sm">
       <CardContent className="space-y-3">
@@ -103,6 +108,7 @@ export function TarjetaVender({ producto: p }: { producto: PrecioProducto }) {
             </div>
           </>
         )}
+        <BotonHistorial nombre={p.nombre} alTocar={alVerHistorial} />
       </CardContent>
     </Card>
   )

@@ -18,10 +18,10 @@ Que productores, mayoristas y almacenes publiquen sus ofertas de mayoreo y atien
 - **Mis ofertas:** CRUD de ofertas (producto genérico, unidad, precio de mayoreo, cantidad mínima y disponible sí/no).
 - **Órdenes recibidas:** lista por estado con acciones: confirmar o rechazar una `solicitada` y enviar una `confirmada`.
 - **Perfil:** nombre, tipo (productor, mayorista o almacén) y zona. *Hecho como tarjeta en Órdenes.*
+- **Trazado de rutas** exist auna opcion para establecer turas compartidas de entrega a grupps de comerciantes apra abaratar costos
 
 ## Fuera de alcance
 
-- Logística, rutas o rastreo de envíos.
 - Facturación y cobranza.
 - Inventario detallado del proveedor (solo "disponible sí/no").
 - Chat con el comercio.
@@ -29,20 +29,11 @@ Que productores, mayoristas y almacenes publiquen sus ofertas de mayoreo y atien
 ## Pantallas
 
 1. **Órdenes (`/proveedor`):** tarjeta de perfil y lista de órdenes por estado con acciones. *Versión inicial hecha solo con el perfil.*
-2. **Detalle de orden (`/proveedor/ordenes/:id`):** comercio, items, total y acciones. *Por hacer.*
-3. **Mis ofertas (`/proveedor/ofertas`):** lista y formulario. *Por hacer (hoy es un marcador `Pendiente`).*
+4. **Mis ofertas (`/proveedor/ofertas`):** lista y formulario. *Por hacer (hoy es un marcador `Pendiente`).*
 
 ## Endpoints que consume
 
-| Método | Ruta | operationId (TS) | Estado |
-|---|---|---|---|
-| GET | `/proveedor/mi-perfil` | `proveedorMiPerfil` | ✅ hecho |
-| GET | `/proveedor/ofertas` | `proveedorListarOfertas` | ⏳ por crear |
-| POST | `/proveedor/ofertas` | `proveedorCrearOferta` | ⏳ por crear |
-| PATCH | `/proveedor/ofertas/{id}` | `proveedorActualizarOferta` | ⏳ por crear |
-| DELETE | `/proveedor/ofertas/{id}` | `proveedorEliminarOferta` | ⏳ por crear |
-| GET | `/proveedor/ordenes` | `proveedorListarOrdenes` | ⏳ por crear |
-| POST | `/proveedor/ordenes/{id}/estado` | `proveedorAvanzarOrden` | ⏳ por crear |
+Diseñalos
 
 ## Criterios de aceptación
 
@@ -51,8 +42,4 @@ Que productores, mayoristas y almacenes publiquen sus ofertas de mayoreo y atien
 - [ ] Un proveedor solo ve y modifica sus propias ofertas y órdenes (403/404 para las ajenas).
 - [ ] Paso 4 del flujo demo: confirmar y enviar la orden del comercio.
 
-## Preguntas abiertas
 
-- ¿El proveedor puede ajustar la cantidad o el precio al confirmar?
-- ¿Mostramos datos de contacto del comercio en el detalle de orden?
-- ¿Las órdenes rechazadas piden un motivo?

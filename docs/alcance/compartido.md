@@ -57,7 +57,6 @@ solicitada ──► confirmada ──► enviada ──► recibida
 
 - **Idioma y moneda:** todo en español de México, con pesos MXN (`pesos()` en `frontend/src/lib/formato.ts`).
 - **"Abierto hoy":** el día de hoy aparece en `dias_operacion` del comercio, con la zona horaria `America/Mexico_City`.
-- **Stock bajo:** `stock < stock_minimo`.
 - **Identidad propia de Tlalamatl:** no se usan logos ni identidad gráfica oficial del Gobierno de la CDMX.
 - **Datos:** todo es mock. `make seed` deja la base en un estado conocido, y el seed garantiza un tianguis abierto hoy.
 
@@ -67,12 +66,13 @@ solicitada ──► confirmada ──► enviada ──► recibida
 - Pagos en línea, facturación y envíos o logística real.
 - Notificaciones push y tiempo real (websockets). Basta con refrescar o re-consultar.
 - Integración real con la App CDMX: por ahora solo debe ser cargable como webview.
-- Mapas interactivos: lat/lng existen en el modelo, pero no hay mapa.
 
 ## Pantallas
 
 1. **Entrada (`/`):** marca Tlalamatl y una tarjeta "Entrar como…" por rol, con sus usuarios demo.
-2. **Layout de rol:** encabezado, contenido y navegación inferior (lo usan las 3 interfaces).
+2. **Mapa de bienvenida**: Mapa interactivo donde aparecen las ubicaciones de los comercios y mercados e la ciudad (mock de ubicacione sapra el hackaton)
+3. **Layout de rol:** encabezado, contenido y navegación inferior (lo usan las 3 interfaces).
+4. **Ficha interatciva** Cada ubicacion dentor del mapa debe de permitir mostrar los detalles del comercio o proveedor 
 
 ## Endpoints que consume
 
@@ -85,19 +85,15 @@ solicitada ──► confirmada ──► enviada ──► recibida
 
 ## Criterios de aceptación
 
-- [ ] La pantalla de entrada carga y muestra usuarios de los 3 roles.
+- [ ] La pantalla de entrada carga, mapa y muestra usuarios de los 3 roles.
 - [ ] Elegir un usuario lleva al inicio de su rol, y recargar la página mantiene la sesión.
 - [ ] Un cliente que entra a `/comercio` es redirigido a `/cliente`.
 - [ ] "Salir" borra la sesión y vuelve a la entrada.
 - [ ] Una transición de estado inválida responde 409 con un mensaje en español.
 - [ ] **Flujo demo de punta a punta** (requiere las 3 ramas integradas):
-  1. Un cliente pide productos a un puesto de tianguis abierto hoy.
-  2. El comercio acepta el pedido; el stock baja y aparece una alerta de stock bajo.
-  3. El comercio crea una orden de abasto a un proveedor mayorista.
-  4. El proveedor la confirma y la envía; el comercio la marca recibida y su stock sube.
+  1. Un usuario entra y puede visualizar el mapa principal
+  2. Si el usuario es un cleinte usuario debe dese capaz de tener comercios favoritos
+  3. Si el usuario es un proveedor debe de ser capaz de viasualizar los comercios que le compran a el de amenra activa
+  4. Si el usuario es un comerciante debe de ser capaz de ver proveedores
+  5. TODOS los usuarios deben de ser capaces de ver los productos de temporada (si son frutas o verduras) y lso rprecios de productos de la ccanasta basica, a manera de dashboard de precios para que si el usaurio es comprador pueda hacer compras infromadas mas barata de productos rpor temprada al iua. que si es ocmerciante y si es productor sepa donde coocar ne deomanda su produco
 
-## Preguntas abiertas
-
-- ¿El cliente puede cancelar un pedido ya aceptado?
-- ¿Mostramos el total del pedido con costo de envío o solo el subtotal?
-- ¿Hace falta un selector de alcaldía global (en el encabezado) o va solo en Explorar?

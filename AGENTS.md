@@ -24,9 +24,9 @@ Es una sola app con login demo diferenciado por rol. Es un mock: importan más l
 
 | Categoría | Días de operación típicos |
 |---|---|
-| `central_abasto` | Casi diario |
+| `central_abasto` | Diario |
 | `mercado_fijo` | Casi diario |
-| `mercado_sobre_ruedas` | Rota; 1–2 días fijos por ubicación |
+| `mercado_sobre_ruedas` | Rota; 1 días fijos por ubicación |
 | `tianguis` | Rota; 1–2 días fijos por ubicación |
 
 **Entidades** (`backend/app/models.py` es la fuente única de verdad):
@@ -49,8 +49,7 @@ OrdenAbasto: solicitada → confirmada → enviada → recibida   (+ rechazada d
 ```
 
 **Efectos en stock:**
-- Aceptar un pedido **descuenta** stock.
-- Recibir una orden de abasto **suma** stock al comercio.
+- Herramienta a futuro
 
 Quién hace cada transición está en `docs/alcance/compartido.md`.
 

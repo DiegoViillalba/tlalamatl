@@ -40,17 +40,24 @@ Que productores, mayoristas y almacenes publiquen sus ofertas de mayoreo, atiend
 | Método | Ruta | operationId (TS) | Estado |
 |---|---|---|---|
 | GET | `/proveedor/mi-perfil` | `proveedorMiPerfil` | ✅ hecho |
-| PATCH | `/proveedor/mi-perfil` | `proveedorActualizarMiPerfil` | ⏳ por crear (zona, teléfono, WhatsApp) |
-| GET | `/proveedor/ofertas` | `proveedorListarOfertas` | ⏳ por crear |
-| POST | `/proveedor/ofertas` | `proveedorCrearOferta` | ⏳ por crear |
-| PATCH | `/proveedor/ofertas/{id}` | `proveedorActualizarOferta` | ⏳ por crear |
-| DELETE | `/proveedor/ofertas/{id}` | `proveedorEliminarOferta` | ⏳ por crear |
-| GET | `/proveedor/ordenes?estado` | `proveedorListarOrdenes` | ⏳ por crear |
-| POST | `/proveedor/ordenes/{id}/estado` | `proveedorAvanzarOrden` | ⏳ por crear; cuerpo `{ estado }`, validado con `validar_orden()` |
-| GET | `/proveedor/compradores` | `proveedorListarCompradores` | ⏳ por crear: comercios con órdenes no rechazadas en los últimos 30 días |
+| PATCH | `/proveedor/mi-perfil` | `proveedorActualizarMiPerfil` | ✅ hecho (backend) (zona, teléfono, WhatsApp) |
+| GET | `/proveedor/ofertas` | `proveedorListarOfertas` | ✅ hecho (backend) |
+| POST | `/proveedor/ofertas` | `proveedorCrearOferta` | ✅ hecho (backend) |
+| PATCH | `/proveedor/ofertas/{id}` | `proveedorActualizarOferta` | ✅ hecho (backend) |
+| DELETE | `/proveedor/ofertas/{id}` | `proveedorEliminarOferta` | ✅ hecho (backend) |
+| GET | `/proveedor/ordenes?estado` | `proveedorListarOrdenes` | ✅ hecho (backend) |
+| POST | `/proveedor/ordenes/{id}/estado` | `proveedorAvanzarOrden` | ✅ hecho (backend); cuerpo `{ estado }`, validado con `validar_orden()` |
+| GET | `/proveedor/compradores` | `proveedorListarCompradores` | ✅ hecho (backend): comercios con órdenes no rechazadas en los últimos 30 días |
 | GET | `/proveedor/rutas/sugeridas` | `proveedorSugerirRutas` | ⏳ por crear: órdenes `confirmadas` agrupadas por alcaldía |
 | POST | `/proveedor/rutas` | `proveedorCrearRuta` | ⏳ por crear; cuerpo `{ orden_ids }`. Requiere una tabla `RutaEntrega` y `ruta_id` en `OrdenAbasto` (cambio en `models.py`, en `main`). |
 | GET | `/proveedor/rutas` | `proveedorListarRutas` | ⏳ por crear |
+
+Notas del backend:
+- `GET /proveedor/ordenes` devuelve cada orden con el contacto del comercio (`comercio`: nombre, categoría, alcaldía, teléfono, WhatsApp) y, en cada item, el nombre y la unidad del producto.
+- `POST /proveedor/ordenes/{id}/estado` responde 409 si la transición es inválida y 403 si el proveedor intenta marcar `recibida` (la hace el comercio).
+- `DELETE /proveedor/ofertas/{id}` responde 409 si la oferta ya está en órdenes de abasto; hay que marcarla como no disponible.
+- `GET /proveedor/compradores` devuelve `{ comercio, ordenes, ultima_orden }`, del más reciente al más antiguo.
+- Los recursos de otro proveedor responden 404.
 
 ## Criterios de aceptación
 

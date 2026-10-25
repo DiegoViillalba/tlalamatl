@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
 import type { LucideIcon } from 'lucide-react'
-import { ChevronRight, ShoppingBasket, Store, Truck } from 'lucide-react'
-import { useNavigate } from 'react-router'
+import { ArrowLeft, ChevronRight, ShoppingBasket, Store, Truck } from 'lucide-react'
+import { Link, useNavigate } from 'react-router'
 import { toast } from 'sonner'
 import type { Rol, UsuarioDemo } from '@/api'
 import { authDemoLoginMutation, authUsuariosDemoOptions } from '@/api/@tanstack/react-query.gen'
@@ -14,7 +14,7 @@ import { guardarSesion, INICIO_POR_ROL } from '@/lib/sesion'
 
 const TARJETAS: { rol: Rol; titulo: string; descripcion: string; icono: LucideIcon }[] = [
   { rol: 'cliente', titulo: 'Entrar como cliente', descripcion: 'Compra en tianguis, mercados y la Central.', icono: ShoppingBasket },
-  { rol: 'comerciante', titulo: 'Entrar como comerciante', descripcion: 'Vende, recibe pedidos y abastece tu puesto.', icono: Store },
+  { rol: 'comerciante', titulo: 'Entrar como comerciante', descripcion: 'Publica tus precios y abastece tu puesto.', icono: Store },
   { rol: 'proveedor', titulo: 'Entrar como proveedor', descripcion: 'Publica ofertas de mayoreo y surte comercios.', icono: Truck },
 ]
 
@@ -32,8 +32,12 @@ export function Entrada() {
 
   return (
     <div className="flex-1 overflow-y-auto">
-      <section className="bg-primary px-6 pt-10 pb-8 text-primary-foreground">
-        <Isotipo className="size-12 rounded-xl ring-2 ring-primary-foreground/30" />
+      <section className="bg-primary px-6 pt-6 pb-8 text-primary-foreground">
+        <Link to="/" className="mb-4 inline-flex items-center gap-1 text-sm opacity-90 hover:opacity-100">
+          <ArrowLeft className="size-4" />
+          Volver al mapa
+        </Link>
+        <Isotipo className="block size-12 rounded-xl ring-2 ring-primary-foreground/30" />
         <h1 className="mt-4 font-heading text-3xl font-semibold tracking-tight">Tlalamatl</h1>
         <p className="mt-1 text-sm opacity-90">
           <em>“Mapa de tierra”</em>. Del productor al mercado, del mercado a tu mesa.
@@ -41,7 +45,7 @@ export function Entrada() {
       </section>
 
       <div className="space-y-4 px-4 py-5">
-        <p className="text-sm text-muted-foreground">Prototipo demo: elige un usuario sembrado para entrar.</p>
+        <p className="text-sm text-muted-foreground">No necesitas cuenta para ver el mapa y los precios. Entra para guardar favoritos, comentar o administrar tu puesto u ofertas. Prototipo demo: elige un usuario sembrado.</p>
 
         {usuarios.isError && (
           <Alert variant="destructive">

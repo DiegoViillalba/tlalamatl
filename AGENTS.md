@@ -87,9 +87,10 @@ tlalamatl/
         ├── components/          # shell compartido (marca, layout de rol, guard, Pendiente…)
         ├── components/ui/       # componentes shadcn
         ├── lib/                 # api.ts (config del cliente), sesion.ts, formato.ts, utils.ts
-        ├── router.tsx           # árbol de rutas (ya incluye los 3 roles)
+        ├── router.tsx           # árbol de rutas (ya incluye lo público y los 3 roles)
         └── routes/
-            ├── entrada.tsx      # pantalla de entrada / login demo
+            ├── entrada.tsx      # /entrar: login demo
+            ├── publico/         # "/" mapa y "/precios", sin login (dueña: rol/cliente)
             └── <rol>/           # index.tsx (rutas + nav del rol), pantallas, CLAUDE.md → alcance
 ```
 

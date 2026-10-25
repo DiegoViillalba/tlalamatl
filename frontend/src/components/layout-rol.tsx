@@ -1,6 +1,6 @@
 import type { LucideIcon } from 'lucide-react'
-import { LogOut } from 'lucide-react'
-import { NavLink, Outlet, useNavigate } from 'react-router'
+import { LogIn, LogOut } from 'lucide-react'
+import { Link, NavLink, Outlet, useNavigate } from 'react-router'
 import { useQueryClient } from '@tanstack/react-query'
 import { Marca } from '@/components/marca'
 import { Button } from '@/components/ui/button'
@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils'
 
 export type ItemNav = { a: string; etiqueta: string; icono: LucideIcon; exacto?: boolean }
 
-/** Layout común de los 3 roles: encabezado + contenido con scroll + navegación inferior tipo app. */
+/** Layout común (rutas públicas y de los 3 roles): encabezado + contenido con scroll + navegación inferior tipo app. */
 export function LayoutRol({ nav }: { nav: ItemNav[] }) {
   const sesion = useSesion()
   const navegar = useNavigate()
@@ -26,15 +26,25 @@ export function LayoutRol({ nav }: { nav: ItemNav[] }) {
     <>
       <header className="flex items-center justify-between border-b px-4 py-3">
         <Marca />
-        <div className="flex items-center gap-2">
-          <div className="text-right leading-tight">
-            <p className="text-sm font-medium">{sesion?.usuario.nombre}</p>
-            <p className="text-xs text-muted-foreground">{sesion && ROLES[sesion.usuario.rol]}</p>
+        {sesion ? (
+          <div className="flex items-center gap-2">
+            <div className="text-right leading-tight">
+              <p className="text-sm font-medium">{sesion.usuario.nombre}</p>
+              <p className="text-xs text-muted-foreground">{ROLES[sesion.usuario.rol]}</p>
+            </div>
+            <Button variant="ghost" size="icon" onClick={salir} aria-label="Salir">
+              <LogOut />
+            </Button>
           </div>
-          <Button variant="ghost" size="icon" onClick={salir} aria-label="Salir">
-            <LogOut />
+        ) : (
+          // Solo en las rutas públicas: sin sesión se puede explorar, y "Entrar" es opcional.
+          <Button asChild size="sm">
+            <Link to="/entrar">
+              <LogIn />
+              Entrar
+            </Link>
           </Button>
-        </div>
+        )}
       </header>
 
       <main className="flex-1 overflow-y-auto px-4 py-4">

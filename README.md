@@ -4,7 +4,7 @@
 
 **No es una tienda en línea, es una plataforma de contacto.** Ayuda a que se encuentren quienes compran, quienes venden en tianguis, mercados y la Central de Abasto, y quienes producen o surten al mayoreo. Cualquiera puede abrir el **mapa** y el **dashboard de precios** sin cuenta. La compra se hace en persona.
 
-Es una sola app; el login demo por rol solo hace falta para favoritos, comentarios y para que comerciantes y proveedores administren sus datos y precios. Todo es mock. Antes de contribuir, lee **[AGENTS.md](AGENTS.md)**.
+Es una sola app; el login demo por rol solo hace falta para favoritos, comentarios y para que comerciantes y proveedores administren sus datos y precios. Los lugares del mapa son reales (Datos Abiertos CDMX); los puestos, precios y contactos son mock. Antes de contribuir, lee **[AGENTS.md](AGENTS.md)**.
 
 ## Levantarlo en menos de 5 minutos
 

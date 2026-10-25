@@ -19,6 +19,9 @@ class ComercioPublico(SQLModel):
     lng: float | None
     dias_operacion: list[Dia]
     abierto_hoy: bool
+    # Contacto directo para los botones Llamar y WhatsApp de la ficha pública.
+    telefono: str | None
+    whatsapp: str | None
 
 
 def a_publico(comercio: Comercio, hoy: Dia) -> ComercioPublico:

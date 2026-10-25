@@ -23,7 +23,7 @@ Tlalamatl **no es un e-commerce, es una plataforma de contacto entre personas**:
 
 ### Exploración pública (sin login)
 
-- **Mapa de bienvenida (`/`):** es lo primero que ve cualquier persona. Es un mapa interactivo de la CDMX con las ubicaciones de mercados, tianguis, la Central de Abasto y proveedores. Las ubicaciones son mock (coordenadas del seed) para el hackathon.
+- **Mapa de bienvenida (`/`):** es lo primero que ve cualquier persona. Es un mapa interactivo de la CDMX con las ubicaciones de mercados, tianguis, la Central de Abasto y proveedores. Los **lugares son reales**: tianguis, mercados públicos y mercados sobre ruedas de SEDECO (Datos Abiertos CDMX), más la Central de Abasto de OpenStreetMap. Los comercios del seed aparecen como puestos de demostración dentro del lugar real más cercano de su categoría.
 - **Ficha interactiva:** al tocar una ubicación se muestran los detalles del comercio o del proveedor: categoría, días de operación, productos, precios y comentarios.
 - **Contacto directo en la ficha:** botones **Llamar** (`tel:`) y **WhatsApp** (`https://wa.me/52…`) para hablar con el comerciante o el proveedor. Es la forma principal de conectar personas; la app no intermedia la venta.
 - **Dashboard de precios (`/precios`):** productos de temporada (frutas y verduras) y precios de la canasta básica. Su uso cambia según quién lo consulta:
@@ -110,9 +110,9 @@ solicitada ──► confirmada ──► enviada ──► recibida
 - **Lectura pública:** todo lo que se puede leer (mapa, fichas, precios, comentarios) se lee sin sesión. Solo escribir requiere login.
 - **Idioma y moneda:** todo en español de México, con pesos MXN (`pesos()` en `frontend/src/lib/formato.ts`).
 - **"Abierto hoy":** el día de hoy aparece en `dias_operacion` del comercio, con la zona horaria `America/Mexico_City`.
-- **Ubicaciones:** son mock. Salen de `lat`/`lng` del seed; no se usa geolocalización real del dispositivo salvo que se acuerde.
+- **Ubicaciones:** los lugares del mapa son reales. Salen de Datos Abiertos CDMX (SEDECO) y de OpenStreetMap, y viven como datos estáticos en `frontend/src/routes/publico/mapa/lugares-datos.ts`, generado por `limpiar_datos.py` (no se edita a mano). La ficha siempre cita la fuente. Los puestos, productos, precios y contactos siguen siendo mock del seed. La geolocalización del dispositivo es opcional ("cerca de mí"); sin permiso, se toma el Zócalo como referencia.
 - **Identidad propia de Tlalamatl:** no se usan logos ni identidad gráfica oficial del Gobierno de la CDMX.
-- **Datos:** todo es mock. `make seed` deja la base en un estado conocido, y el seed garantiza un tianguis abierto hoy.
+- **Datos:** salvo los lugares del mapa, todo es mock. `make seed` deja la base en un estado conocido, y el seed garantiza un tianguis abierto hoy.
 
 ## Fuera de alcance
 
@@ -124,10 +124,10 @@ solicitada ──► confirmada ──► enviada ──► recibida
 
 ## Pantallas
 
-1. **Mapa (`/`, público):** mapa con filtros (categoría, "abierto hoy") y botón "Entrar". *Por hacer.* Hoy `/` es la pantalla de login, que se mueve a `/entrar`.
+1. **Mapa (`/`, público):** mapa con búsqueda, filtros (categoría, "abierto hoy") y lista por distancia. La navegación inferior tiene Mapa, Precios y Entrar (o "Mi espacio" si hay sesión). *Hecho: sin sesión muestra "Entrar" en el encabezado.*
 2. **Ficha interactiva (público):** hoja inferior sobre el mapa con los detalles del comercio o proveedor, sus productos con precio, sus comentarios y los botones **Llamar** y **WhatsApp**. Los botones "Favorito" y "Comentar" piden sesión. *Por hacer.*
-3. **Dashboard de precios (`/precios`, público):** productos de temporada y canasta básica, con precio mínimo y promedio por producto y dónde encontrarlo. *Por hacer.*
-4. **Entrar (`/entrar`):** marca Tlalamatl y una tarjeta "Entrar como…" por rol, con sus usuarios demo. *Hecha en `/`; falta moverla.*
+3. **Dashboard de precios (`/precios`, público):** productos de temporada y canasta básica, con precio mínimo y promedio por producto y dónde encontrarlo. *Por hacer: la ruta existe con un marcador `Pendiente`.*
+4. **Entrar (`/entrar`):** marca Tlalamatl y una tarjeta "Entrar como…" por rol, con sus usuarios demo y "Volver al mapa". *Hecha.* Las rutas de rol sin sesión redirigen aquí.
 5. **Layout de rol:** encabezado, contenido y navegación inferior (lo usan las 3 interfaces). *Hecho.*
 
 ## Endpoints que consume
@@ -138,9 +138,10 @@ solicitada ──► confirmada ──► enviada ──► recibida
 | POST | `/auth/demo-login` | `authDemoLogin` | ✅ hecho |
 | GET | `/auth/yo` | `authYo` | ✅ hecho |
 | GET | `/salud` | `sistemaSalud` | ✅ hecho |
-| GET | `/publico/comercios?categoria&alcaldia&abierto_hoy` | `publicoListarComercios` | ✅ hecho |
+| GET | `/publico/comercios?categoria&alcaldia&abierto_hoy` | `publicoListarComercios` | ✅ hecho; incluye `telefono` y `whatsapp` |
+| GET | `/publico/comercios/{id}` | `publicoObtenerComercio` | ✅ hecho; incluye `telefono` y `whatsapp` |
 | GET | `/publico/comercios/{id}/productos` | `publicoListarProductos` | ✅ hecho |
-| GET | `/publico/mapa` | `publicoMapa` | ⏳ por crear: comercios y proveedores con coordenadas, tipo y contacto (teléfono, WhatsApp). Los campos ya existen en el modelo y en el seed. |
+| GET | `/publico/proveedores` | `publicoListarProveedores` | ⏳ por crear: proveedores con coordenadas, tipo y contacto, para mostrarlos en el mapa. Los lugares reales ya no necesitan endpoint, porque son estáticos en el frontend. |
 | GET | `/publico/precios?temporada` | `publicoPrecios` | ⏳ por crear: agrega `Producto.precio` y `OfertaProveedor.precio_mayoreo` por producto. Requiere un catálogo común de productos (ver preguntas). |
 | GET | `/publico/comercios/{id}/comentarios` | `publicoListarComentarios` | ⏳ por crear (la tabla `Comentario` ya existe). |
 
@@ -151,9 +152,9 @@ solicitada ──► confirmada ──► enviada ──► recibida
 - [ ] Sin sesión se puede abrir el dashboard de precios y leer los comentarios de un comercio.
 - [ ] Al tocar "Favorito" o "Comentar" sin sesión, se pide entrar. Después de entrar, la persona regresa a la misma ficha.
 - [ ] Si un comerciante cambia el precio de un producto, el cambio se refleja en el dashboard de precios.
-- [ ] Elegir un usuario en `/entrar` lleva al inicio de su rol, y recargar la página mantiene la sesión.
-- [ ] Un cliente que entra a `/comercio` es redirigido a `/cliente`.
-- [ ] "Salir" borra la sesión y vuelve al mapa.
+- [x] Elegir un usuario en `/entrar` lleva al inicio de su rol, y recargar la página mantiene la sesión.
+- [x] Un cliente que entra a `/comercio` es redirigido a `/cliente`; sin sesión, a `/entrar`.
+- [x] "Salir" borra la sesión y vuelve al mapa.
 - [ ] Una transición de estado inválida responde 409 con un mensaje en español.
 - [ ] **Flujo demo de punta a punta** (requiere las 3 ramas integradas):
   1. **Sin cuenta:** se abre el mapa, se toca un tianguis, se ve su ficha y se consulta el dashboard de precios.

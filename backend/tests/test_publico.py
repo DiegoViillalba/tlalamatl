@@ -27,3 +27,11 @@ def test_productos_de_un_comercio(client):
     productos = client.get(f"/publico/comercios/{comercio['id']}/productos").json()
     assert productos and all(p["comercio_id"] == comercio["id"] for p in productos)
     assert client.get("/publico/comercios/9999/productos").status_code == 404
+
+
+def test_comercios_exponen_contacto(client):
+    comercios = client.get("/publico/comercios").json()
+    assert all(c["telefono"] for c in comercios)
+    assert any(c["whatsapp"] is None for c in comercios)
+    unico = client.get(f"/publico/comercios/{comercios[0]['id']}").json()
+    assert unico["telefono"] == comercios[0]["telefono"]

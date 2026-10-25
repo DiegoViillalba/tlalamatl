@@ -20,6 +20,8 @@ certifi==2026.10.23
     #   httpx
     #   requests
     #   sentry-sdk
+cffi==2.1.1 ; platform_python_implementation != 'PyPy'
+    # via cryptography
 charset-normalizer==3.5.2
     # via requests
 click==8.5.0
@@ -28,6 +30,8 @@ click==8.5.0
     #   uvicorn
 colorama==0.4.6 ; sys_platform == 'win32'
     # via typer
+cryptography==50.0.2
+    # via pyjwt
 detect-installer==0.2.1
     # via fastapi-cloud-cli
 dnspython==2.9.0
@@ -114,6 +118,8 @@ protobuf==7.36.2
     # via
     #   googleapis-common-protos
     #   opentelemetry-proto
+pycparser==3.12 ; implementation_name != 'PyPy' and platform_python_implementation != 'PyPy'
+    # via cffi
 pydantic==2.14.1
     # via
     #   fastapi
@@ -134,6 +140,7 @@ pyjwt==2.15.1
 python-dotenv==1.2.4
     # via
     #   pydantic-settings
+    #   tlalamatl-backend
     #   uvicorn
 python-multipart==0.0.32
     # via fastapi

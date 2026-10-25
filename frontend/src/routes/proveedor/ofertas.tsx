@@ -9,6 +9,7 @@ import {
   proveedorEliminarOfertaMutation,
   proveedorListarOfertasOptions,
   proveedorListarOfertasQueryKey,
+  publicoListarProductosBaseOptions,
 } from '@/api/@tanstack/react-query.gen'
 import { Encabezado } from '@/components/encabezado'
 import { CreditosImagenes, ImagenProducto } from '@/components/imagen-producto'
@@ -18,6 +19,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { mensajeError } from '@/lib/api'
 import { pesos } from '@/lib/formato'
@@ -91,6 +93,11 @@ function TarjetaOferta({ oferta, onEditar }: { oferta: OfertaProveedor; onEditar
             <p className="text-sm text-muted-foreground">
               {pesos(oferta.precio_mayoreo)} por {oferta.unidad} · mínimo {oferta.cantidad_minima} {oferta.unidad}
             </p>
+            {oferta.disponible && !oferta.producto_base_id && (
+              <p className="mt-0.5 text-xs text-amber-700 dark:text-amber-400">
+                Fuera del dashboard de precios: elige un producto del catálogo al editarla.
+              </p>
+            )}
           </div>
           <Badge variant={oferta.disponible ? 'secondary' : 'outline'}>
             {oferta.disponible ? 'Disponible' : 'No disponible'}
@@ -133,12 +140,27 @@ function TarjetaOferta({ oferta, onEditar }: { oferta: OfertaProveedor; onEditar
 function FormularioOferta({ edicion, onCerrar }: { edicion: Edicion; onCerrar: () => void }) {
   const oferta = edicion && edicion !== 'nueva' ? edicion : null
   const refrescar = useRefrescarOfertas()
+  const catalogo = useQuery({ ...publicoListarProductosBaseOptions(), staleTime: Infinity })
   const [nombre, setNombre] = useState('')
-  // Al abrir otra oferta (o una nueva), el campo parte del nombre de esa oferta.
+  const [unidad, setUnidad] = useState('')
+  // 'auto' = el backend lo busca por el nombre; 'ninguno' = quitar el enlace; si no, el id del producto base.
+  const [base, setBase] = useState('auto')
+  // Al abrir otra oferta (o una nueva), los campos parten de los datos de esa oferta.
   const [abierta, setAbierta] = useState<Edicion>(null)
   if (edicion !== abierta) {
     setAbierta(edicion)
     setNombre(oferta?.producto ?? '')
+    setUnidad(oferta?.unidad ?? '')
+    setBase(oferta?.producto_base_id ? String(oferta.producto_base_id) : 'auto')
+  }
+
+  function elegirBase(valor: string) {
+    setBase(valor)
+    const elegido = catalogo.data?.find((b) => String(b.id) === valor)
+    if (!elegido) return
+    // Solo rellena lo que todavía está vacío: no pisa lo que la persona ya escribió.
+    if (!nombre.trim()) setNombre(elegido.nombre)
+    if (!unidad.trim()) setUnidad(elegido.unidad)
   }
 
   const crear = useMutation(proveedorCrearOfertaMutation())
@@ -149,11 +171,12 @@ function FormularioOferta({ edicion, onCerrar }: { edicion: Edicion; onCerrar: (
     e.preventDefault()
     const datos = new FormData(e.currentTarget)
     const body = {
-      producto: String(datos.get('producto')).trim(),
-      unidad: String(datos.get('unidad')).trim(),
+      producto: nombre.trim(),
+      unidad: unidad.trim(),
       precio_mayoreo: Number(datos.get('precio_mayoreo')),
       cantidad_minima: Number(datos.get('cantidad_minima')),
       disponible: datos.get('disponible') === 'on',
+      ...(base === 'ninguno' ? { sin_catalogo: true } : base !== 'auto' ? { producto_base_id: Number(base) } : {}),
     }
     const opciones = {
       onSuccess: () => {
@@ -191,10 +214,30 @@ function FormularioOferta({ edicion, onCerrar }: { edicion: Edicion; onCerrar: (
             </div>
             <p className="text-xs text-muted-foreground">Foto ilustrativa que verán los comercios, según el nombre.</p>
           </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="catalogo">Producto del catálogo</Label>
+            <Select value={base} onValueChange={elegirBase}>
+              <SelectTrigger id="catalogo" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="auto">Automático (según el nombre)</SelectItem>
+                {oferta && <SelectItem value="ninguno">Sin catálogo</SelectItem>}
+                {catalogo.data?.map((b) => (
+                  <SelectItem key={b.id} value={String(b.id)}>
+                    {b.nombre}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Así tu precio de mayoreo aparece en el dashboard de precios junto al de otros proveedores.
+            </p>
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="unidad">Unidad</Label>
-              <Input id="unidad" name="unidad" required defaultValue={oferta?.unidad} placeholder="kg" />
+              <Input id="unidad" required value={unidad} onChange={(e) => setUnidad(e.target.value)} placeholder="kg" />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="precio_mayoreo">Precio por unidad (MXN)</Label>

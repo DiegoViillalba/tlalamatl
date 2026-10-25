@@ -139,6 +139,57 @@ def test_ofertas_ajenas_responden_404(client, login):
     assert intacta["id"] == ajena and intacta["precio_mayoreo"] != 1
 
 
+def _crear(client, h, **datos):
+    base = {"producto": "Calabacita", "unidad": "kg", "precio_mayoreo": 18, "cantidad_minima": 25}
+    return client.post("/proveedor/ofertas", json={**base, **datos}, headers=h)
+
+
+def test_oferta_se_enlaza_al_catalogo_por_el_nombre(client, login):
+    h = login(Rol.proveedor)
+    assert _crear(client, h, producto="Calabacitas tiernas").json()["producto_base_id"] is not None
+    assert _crear(client, h, producto="Sandía").json()["producto_base_id"] is None
+
+
+def test_oferta_enlazada_aparece_en_el_dashboard_de_precios(client, login):
+    h = login(Rol.proveedor, XOCHIMILCO)
+    calabacita = next(b for b in client.get("/publico/productos-base").json() if b["nombre"] == "Calabacita")
+    antes = next((p for p in client.get("/publico/precios", params={"mes": 6}).json() if p["nombre"] == "Calabacita"), None)
+    assert antes is None or antes["mayoreo"]["n"] == 0 or antes["mayoreo"]["n"] >= 0
+    oferta = _crear(client, h, producto="Calabacita italiana", precio_mayoreo=11).json()
+    assert oferta["producto_base_id"] == calabacita["id"]
+    despues = next(p for p in client.get("/publico/precios", params={"mes": 6}).json() if p["nombre"] == "Calabacita")
+    assert despues["mayoreo"]["minimo"] <= 11
+    # Cambiar el precio de mayoreo se refleja.
+    client.patch(f"/proveedor/ofertas/{oferta['id']}", json={"precio_mayoreo": 7}, headers=h)
+    nuevo = next(p for p in client.get("/publico/precios", params={"mes": 6}).json() if p["nombre"] == "Calabacita")
+    assert nuevo["mayoreo"]["minimo"] == 7
+    # Y si se marca no disponible deja de contar.
+    client.patch(f"/proveedor/ofertas/{oferta['id']}", json={"disponible": False}, headers=h)
+    final = next((p for p in client.get("/publico/precios", params={"mes": 6}).json() if p["nombre"] == "Calabacita"), None)
+    assert final is None or final["mayoreo"] is None or final["mayoreo"]["minimo"] != 7
+
+
+def test_oferta_con_producto_base_explicito(client, login):
+    h = login(Rol.proveedor)
+    sandia_no_existe = _crear(client, h, producto="Sandía", producto_base_id=99999)
+    assert sandia_no_existe.status_code == 422
+    mango = next(b for b in client.get("/publico/productos-base").json() if b["nombre"] == "Mango")
+    r = _crear(client, h, producto="Sandía", producto_base_id=mango["id"])
+    assert r.status_code == 201 and r.json()["producto_base_id"] == mango["id"]
+
+
+def test_actualizar_enlace_al_catalogo(client, login):
+    h = login(Rol.proveedor)
+    oferta = _crear(client, h, producto="Sandía").json()
+    assert oferta["producto_base_id"] is None
+    url = f"/proveedor/ofertas/{oferta['id']}"
+    # Al renombrarla a algo del catálogo se enlaza sola.
+    assert client.patch(url, json={"producto": "Papaya maradol"}, headers=h).json()["producto_base_id"] is not None
+    # Se puede quitar el enlace a propósito.
+    assert client.patch(url, json={"sin_catalogo": True}, headers=h).json()["producto_base_id"] is None
+    assert client.patch(url, json={"producto_base_id": 99999}, headers=h).status_code == 422
+
+
 # --- Órdenes -------------------------------------------------------------------------
 
 

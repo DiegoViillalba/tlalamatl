@@ -59,13 +59,13 @@ Edítalos en tu rama como cualquier archivo. Si un cambio de código altera el a
 
 ## Guion del flujo demo
 
-Esto funciona de punta a punta cuando las 3 ramas estén integradas en `main`:
+Esto funciona de punta a punta cuando las 3 ramas estén integradas en `main`. La fuente es `docs/alcance/compartido.md`.
 
-1. **Cliente:** en la entrada, *Entrar como cliente*. En Explorar, filtra "abierto hoy", abre un **tianguis** (el seed garantiza que *Verduras Doña Mary* abre hoy), agrega jitomate al carrito y confirma el pedido.
-2. **Comercio:** sal y entra como el comerciante de *Verduras Doña Mary*. **Acepta** el pedido: el stock de jitomate baja y aparece la **alerta de stock bajo** en el dashboard.
-3. **Comercio:** en *Abastecerme*, elige la oferta de jitomate de *Distribuidora Hortícola del Valle* (mayorista) y crea una **orden de abasto**.
-4. **Proveedor:** entra como *Distribuidora Hortícola del Valle*, **confirma** la orden y luego la **envía**.
-5. **Comercio:** vuelve a entrar como el comerciante y marca la orden como **recibida**: el stock sube y la alerta desaparece.
+1. **Mapa:** al entrar se ve el mapa de la CDMX con comercios y proveedores. Tocar uno abre su ficha.
+2. **Cliente:** *Entrar como cliente*, explorar comercios (p. ej. "abierto hoy") y marcar tianguis o mercados como **favoritos**.
+3. **Proveedor:** entrar como *Distribuidora Hortícola del Valle* y ver los **comercios que le compran** de manera activa.
+4. **Comerciante:** entrar como el comerciante de *Verduras Doña Mary* y ver a los **proveedores** y sus ofertas.
+5. **Todos:** abrir el **dashboard de precios** con los productos de temporada y la canasta básica.
 
 ## Estado actual
 

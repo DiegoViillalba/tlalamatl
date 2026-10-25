@@ -11,6 +11,8 @@
 - **B2C:** clientes → comerciantes (Central de Abasto, mercados fijos, mercados sobre ruedas y tianguis).
 - **B2B:** comerciantes → proveedores (productores, mayoristas, almacenes).
 
+Como piezas transversales, la app tiene un **mapa** de comercios y proveedores y un **dashboard de precios** (productos de temporada y canasta básica) que ven todos los roles.
+
 Es una sola app con login demo diferenciado por rol. Es un mock: importan más la velocidad, la claridad y un flujo demo convincente que la robustez de producción. Usa identidad propia de Tlalamatl, nunca logos ni identidad gráfica oficial del Gobierno de la CDMX.
 
 ## Dominio
@@ -26,7 +28,7 @@ Es una sola app con login demo diferenciado por rol. Es un mock: importan más l
 |---|---|
 | `central_abasto` | Diario |
 | `mercado_fijo` | Casi diario |
-| `mercado_sobre_ruedas` | Rota; 1 días fijos por ubicación |
+| `mercado_sobre_ruedas` | Rota; 1 día fijo por ubicación |
 | `tianguis` | Rota; 1–2 días fijos por ubicación |
 
 **Entidades** (`backend/app/models.py` es la fuente única de verdad):
@@ -48,8 +50,7 @@ Pedido:      creado → aceptado → listo → entregado     (+ cancelado desde 
 OrdenAbasto: solicitada → confirmada → enviada → recibida   (+ rechazada desde solicitada)
 ```
 
-**Efectos en stock:**
-- Herramienta a futuro
+**Efectos en stock:** herramienta a futuro, fuera del MVP. Aceptar un pedido descontaría stock y recibir una orden lo sumaría.
 
 Quién hace cada transición está en `docs/alcance/compartido.md`.
 

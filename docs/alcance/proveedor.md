@@ -19,7 +19,7 @@ Que productores, mayoristas y almacenes publiquen sus ofertas de mayoreo, atiend
 - **Órdenes recibidas:** lista por estado con acciones: confirmar o rechazar una `solicitada` y enviar una `confirmada`.
 - **Mis compradores:** comercios que le compran de manera activa, es decir, con órdenes recientes no rechazadas.
 - **Rutas compartidas de entrega:** agrupar órdenes de varios comerciantes cercanos en una sola ruta de entrega para abaratar costos.
-- **Perfil:** nombre, tipo (productor, mayorista o almacén), zona, **teléfono y WhatsApp**. Es lo que se ve en su ficha pública. *Hecho como tarjeta en Órdenes, solo lectura.*
+- **Perfil:** nombre, tipo (productor, mayorista o almacén), zona, **teléfono y WhatsApp**. Es lo que se ve en su ficha pública. *Tarjeta en Órdenes, solo lectura; el `PATCH` ya existe en el backend pero no hay pantalla para editarlo.*
 - **Contactar al comercio:** botones Llamar y WhatsApp en cada orden y en "Mis compradores".
 
 ## Fuera de alcance
@@ -30,9 +30,9 @@ Que productores, mayoristas y almacenes publiquen sus ofertas de mayoreo, atiend
 
 ## Pantallas
 
-1. **Órdenes (`/proveedor`):** tarjeta de perfil y lista de órdenes por estado con acciones. *Versión inicial hecha solo con el perfil.*
-2. **Mis ofertas (`/proveedor/ofertas`):** lista y formulario. *Por hacer (hoy es un marcador `Pendiente`).*
-3. **Mis compradores (`/proveedor/compradores`):** comercios activos con su categoría, alcaldía y última orden. *Por hacer.*
+1. **Órdenes (`/proveedor`):** tarjeta de perfil (solo lectura, con Llamar y WhatsApp) y órdenes en pestañas Nuevas, Por enviar, Enviadas e Historial. Cada orden muestra items, total, contacto del comercio y solo las acciones válidas (confirmar o rechazar una nueva; enviar una confirmada). *Hecha.*
+2. **Mis ofertas (`/proveedor/ofertas`):** lista, alta y edición en un diálogo, cambio rápido de disponible y eliminación con confirmación. *Hecha.*
+3. **Mis compradores (`/proveedor/compradores`):** comercios activos con su categoría, alcaldía, número de órdenes, última orden y contacto. *Hecha.*
 4. **Rutas (`/proveedor/rutas`):** rutas sugeridas (órdenes confirmadas agrupadas por cercanía) y rutas creadas. *Por hacer.*
 
 ## Endpoints que consume
@@ -62,9 +62,9 @@ Notas del backend:
 ## Criterios de aceptación
 
 - [ ] Una oferta marcada como no disponible deja de aparecer en "Proveedores" del comercio.
-- [ ] Solo se ofrecen las acciones válidas para el estado de la orden; una inválida responde 409.
-- [ ] Un proveedor solo ve y modifica sus propias ofertas, órdenes y rutas (403/404 para las ajenas).
-- [ ] "Mis compradores" lista solo los comercios con órdenes activas de este proveedor.
+- [x] Solo se ofrecen las acciones válidas para el estado de la orden; una inválida responde 409.
+- [ ] Un proveedor solo ve y modifica sus propias ofertas, órdenes y rutas (ofertas y órdenes ✅ con tests; faltan rutas) (403/404 para las ajenas).
+- [x] "Mis compradores" lista solo los comercios con órdenes activas de este proveedor.
 - [ ] Se puede crear una ruta con órdenes confirmadas de 2 o más comercios, y la ruta muestra sus paradas.
 - [ ] Cambiar el precio de mayoreo de una oferta se refleja en el dashboard de precios.
 - [ ] Paso 4 del flujo demo (`compartido.md`): el proveedor ve los comercios que le compran de manera activa.

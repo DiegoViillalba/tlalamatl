@@ -58,6 +58,7 @@ Tlalamatl **no es un e-commerce, es una plataforma de contacto entre personas**:
 | Tabla `Favorito` (usuario, comercio; sin repetidos) | Favoritos del cliente | `rol/cliente` | ✅ en modelo y seed |
 | Tabla `Comentario` (usuario, comercio, texto ≤ 500, fecha) | Comentarios en la ficha | `rol/cliente`, `rol/comercio` | ✅ en modelo y seed |
 | Tabla `ProductoBase` (nombre único, unidad, categoría, `canasta_basica`, `meses_temporada`) y `producto_base_id` opcional en `Producto` y `OfertaProveedor` | Agrupar precios por producto, canasta básica y temporada | Público, `rol/comercio`, `rol/proveedor` | ✅ en modelo y seed |
+| Tabla `PrecioHistorico` (producto base, fecha, menudeo promedio/mínimo, mayoreo promedio/mínimo, n de muestras) | Historial semanal de precios y canasta sugerida | Público | ✅ en modelo y seed (12 semanas por producto, con patrón de temporada y ruido determinista; la última semana coincide con los precios actuales) |
 | `RutaEntrega` y `ruta_id` en `OrdenAbasto` | Rutas compartidas | `rol/proveedor` | ⏳ después |
 
 En el seed, los teléfonos son **ficticios**: tienen la forma `5500xxxxxx`, un rango que en la CDMX no se asigna. Nunca se usan números reales. Un puesto (Pollería El Güero) no tiene WhatsApp, para probar ese caso en la ficha.
@@ -143,6 +144,8 @@ solicitada ──► confirmada ──► enviada ──► recibida
 | GET | `/publico/comercios/{id}/productos` | `publicoListarProductos` | ✅ hecho |
 | GET | `/publico/proveedores` | `publicoListarProveedores` | ⏳ por crear: proveedores con coordenadas, tipo y contacto, para mostrarlos en el mapa. Los lugares reales ya no necesitan endpoint, porque son estáticos en el frontend. |
 | GET | `/publico/precios?temporada&canasta&categoria&mes` | `publicoPrecios` | ✅ hecho: por `ProductoBase`, menudeo y mayoreo (mín/promedio/máx/n), dónde está más barato (comercio y proveedor, con contacto) y demanda por reabasto. Sin login. |
+| GET | `/publico/canasta?mes` | `publicoCanasta` | ✅ hecho: canasta sugerida del mes (canasta básica y de temporada), con precio más barato vs. promedio, comercio donde comprarlo, totales, ahorro y lugares a visitar. Los 8 mejores vienen con `en_canasta`; el resto son candidatos para agregar. |
+| GET | `/publico/precios/{producto_base_id}/historial?semanas=12` | `publicoHistorialPrecios` | ✅ hecho: serie semanal (más antigua primero) de menudeo y mayoreo, promedio y mínimo. 404 si el producto no existe. |
 | GET | `/publico/comercios/{id}/comentarios` | `publicoListarComentarios` | ⏳ por crear (la tabla `Comentario` ya existe). |
 
 ## Criterios de aceptación

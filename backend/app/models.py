@@ -4,7 +4,7 @@ Archivo COMPARTIDO: los cambios se hacen en `main` y luego cada rama hace `git m
 (ver AGENTS.md, "Trabajo en ramas").
 """
 
-from datetime import datetime
+from datetime import date, datetime
 from enum import Enum
 from zoneinfo import ZoneInfo
 
@@ -133,6 +133,19 @@ class ProductoBase(SQLModel, table=True):
     canasta_basica: bool = False
     # Meses (1-12) en que es de temporada. Lista vacía = todo el año.
     meses_temporada: list[int] = Field(default_factory=list, sa_column=Column(JSON))
+
+
+class PrecioHistorico(SQLModel, table=True):
+    """Foto semanal de los precios de un producto base (historial del dashboard `/publico/precios`)."""
+
+    id: int | None = Field(default=None, primary_key=True)
+    producto_base_id: int = Field(foreign_key="productobase.id", index=True)
+    fecha: date
+    menudeo_promedio: float
+    menudeo_minimo: float
+    mayoreo_promedio: float | None = None  # None si esa semana no había ofertas de mayoreo
+    mayoreo_minimo: float | None = None
+    n_muestras: int  # precios de menudeo que entraron al promedio
 
 
 class Producto(SQLModel, table=True):

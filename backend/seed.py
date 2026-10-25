@@ -4,6 +4,7 @@ Uso: `make seed` (o `uv run python seed.py` dentro de backend/).
 Archivo COMPARTIDO: si tu rol necesita más datos, agrégalos en `main` (ver AGENTS.md).
 """
 
+import math
 from datetime import timedelta
 
 from faker import Faker
@@ -23,6 +24,7 @@ from app.models import (
     OrdenAbastoItem,
     Pedido,
     PedidoItem,
+    PrecioHistorico,
     Producto,
     ProductoBase,
     Proveedor,
@@ -93,6 +95,25 @@ ALIAS_BASE = {
     "Arroz súper extra": "Arroz",
     "Azúcar estándar": "Azúcar",
 }
+
+
+SEMANAS_HISTORIAL = 12
+
+
+def factor_temporada(meses: list[int], mes: int) -> float:
+    """Cuánto cuesta el producto ese mes respecto a un precio base: más barato en temporada, más caro fuera."""
+    if not meses:
+        return 1 + 0.03 * math.sin(mes / 12 * 2 * math.pi)  # casi plano todo el año
+    if mes in meses:
+        return 0.82
+    vecino = {(m % 12) + 1 for m in meses} | {((m - 2) % 12) + 1 for m in meses}
+    return 1.0 if mes in vecino else 1.18
+
+
+def ruido(producto_base_id: int, semana: int) -> float:
+    """Ruido pequeño (±2%) pero determinista: depende solo del producto y de la semana."""
+    x = math.sin(producto_base_id * 12.9898 + semana * 78.233) * 43758.5453
+    return (x - math.floor(x) - 0.5) * 0.04
 
 
 def telefono_ficticio(n: int) -> str:
@@ -410,6 +431,39 @@ def sembrar(session: Session, hoy: Dia | None = None) -> None:
             )
             session.add(o)
             ofertas[prov.id].append(o)
+    session.flush()
+
+    # --- Historial semanal de precios --------------------------------------------------
+    # La última semana coincide con los precios actuales; hacia atrás se aplica la temporada y algo de ruido.
+    hoy_fecha = ahora().date()
+    for base in bases.values():
+        menudeo = [p.precio for ps in productos.values() for p in ps if p.producto_base_id == base.id]
+        mayoreo = [
+            o.precio_mayoreo for os in ofertas.values() for o in os if o.producto_base_id == base.id and o.disponible
+        ]
+        if not menudeo:
+            continue
+        prom, minimo = sum(menudeo) / len(menudeo), min(menudeo)
+        for atras in range(SEMANAS_HISTORIAL - 1, -1, -1):
+            fecha = hoy_fecha - timedelta(weeks=atras)
+            # Factor relativo al mes actual: 1.0 en la semana de hoy, sin ruido.
+            k = 1.0
+            if atras:
+                k = factor_temporada(base.meses_temporada, fecha.month) / factor_temporada(
+                    base.meses_temporada, hoy_fecha.month
+                ) * (1 + ruido(base.id, atras))
+            k_min = k * (1 + ruido(base.id, atras + 100) / 2) if atras else 1.0
+            session.add(
+                PrecioHistorico(
+                    producto_base_id=base.id,
+                    fecha=fecha,
+                    menudeo_promedio=round(prom * k, 2),
+                    menudeo_minimo=round(min(minimo * k_min, prom * k), 2),
+                    mayoreo_promedio=round(sum(mayoreo) / len(mayoreo) * k, 2) if mayoreo else None,
+                    mayoreo_minimo=round(min(mayoreo) * k, 2) if mayoreo else None,
+                    n_muestras=len(menudeo),
+                )
+            )
     session.flush()
 
     # --- Pedidos en distintos estados -------------------------------------------------

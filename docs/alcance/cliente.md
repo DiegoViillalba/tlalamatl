@@ -50,6 +50,8 @@ La navegación inferior del cliente queda así: Mapa (`/`), Favoritos, Mis comen
 | GET | `/publico/comercios/{id}` | `publicoObtenerComercio` | ✅ hecho |
 | GET | `/publico/comercios/{id}/productos` | `publicoListarProductos` | ✅ hecho |
 | GET | `/publico/precios?temporada&canasta&categoria&mes` | `publicoPrecios` | ✅ hecho (dashboard de precios) |
+| GET | `/publico/canasta?mes` | `publicoCanasta` | ✅ hecho (canasta sugerida) |
+| GET | `/publico/precios/{producto_base_id}/historial?semanas` | `publicoHistorialPrecios` | ✅ hecho (historial) |
 | GET | `/publico/comercios/{id}/comentarios` | `publicoListarComentarios` | ⏳ por crear (ver `compartido.md`) |
 | GET | `/cliente/favoritos` | `clienteListarFavoritos` | ⏳ por crear (la tabla `Favorito` ya existe). |
 | PUT | `/cliente/favoritos/{comercio_id}` | `clienteAgregarFavorito` | ⏳ por crear |

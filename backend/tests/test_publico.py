@@ -129,3 +129,91 @@ def test_el_cambio_de_precio_se_refleja(client, session):
     session.add(producto)
     session.commit()
     assert precios(client)["Jitomate"]["menudeo"]["minimo"] == 5
+
+
+# --- Canasta sugerida e historial -------------------------------------------------------
+
+
+def canasta(client, **params):
+    r = client.get("/publico/canasta", params=params)
+    assert r.status_code == 200
+    return r.json()
+
+
+def test_canasta_es_publica_y_se_compone_de_canasta_basica_y_temporada(client):
+    c = canasta(client, mes=10)
+    nombres = {p["nombre"] for p in c["productos"]}
+    assert {"Jitomate", "Frijol", "Mandarina", "Guayaba"} <= nombres  # básica y/o de temporada
+    assert "Fresa" not in nombres and "Mango" not in nombres  # ni básica ni de temporada en octubre
+    assert all(p["canasta_basica"] or p["de_temporada"] for p in c["productos"])
+    elegidos = [p for p in c["productos"] if p["en_canasta"]]
+    assert 0 < len(elegidos) <= 8
+    # Los que son canasta básica Y de temporada van primero.
+    ambos = [p["canasta_basica"] and p["de_temporada"] for p in c["productos"]]
+    assert ambos == sorted(ambos, reverse=True)
+    manzana = next(p for p in c["productos"] if p["nombre"] == "Manzana")
+    assert manzana["motivos"][:2] == ["De temporada", "Canasta básica"]
+
+
+def test_canasta_cambia_con_el_mes(client):
+    octubre = {p["nombre"] for p in canasta(client, mes=10)["productos"] if p["de_temporada"]}
+    mayo = {p["nombre"] for p in canasta(client, mes=5)["productos"] if p["de_temporada"]}
+    assert "Mandarina" in octubre and "Mandarina" not in mayo
+    assert "Mango" in mayo and "Mango" not in octubre
+    assert client.get("/publico/canasta", params={"mes": 0}).status_code == 422
+
+
+def test_canasta_ahorro_y_totales(client):
+    c = canasta(client, mes=10)
+    elegidos = [p for p in c["productos"] if p["en_canasta"]]
+    for p in c["productos"]:
+        assert p["precio_referencia"] <= p["precio_promedio"]
+        esperado = round((p["precio_promedio"] - p["precio_referencia"]) / p["precio_promedio"] * 100, 1)
+        assert p["ahorro_pct"] == esperado
+        assert p["comercio"]["precio"] == p["precio_referencia"] and p["cantidad_sugerida"] == 1
+    assert c["total_mas_barato"] == round(sum(p["precio_referencia"] for p in elegidos), 2)
+    assert c["total_promedio"] == round(sum(p["precio_promedio"] for p in elegidos), 2)
+    assert c["ahorro_total"] == round(c["total_promedio"] - c["total_mas_barato"], 2) > 0
+    assert c["lugares_a_visitar"] == len({p["comercio"]["id"] for p in elegidos})
+    jitomate = next(p for p in c["productos"] if p["nombre"] == "Jitomate")  # $19 vs promedio $23.50
+    assert jitomate["precio_referencia"] == 19 and jitomate["ahorro_pct"] == 19.1
+    assert jitomate["comercio"]["nombre"] == "Bodega Hermanos Ramírez"
+
+
+def test_canasta_trae_contacto_y_no_usa_mayoreo(client):
+    c = canasta(client, mes=10)
+    pechuga = next(p for p in c["productos"] if p["nombre"] == "Pechuga de pollo")
+    assert pechuga["comercio"]["whatsapp"] is None and pechuga["comercio"]["telefono"]
+    # El precio de referencia es de menudeo: nunca baja al mayoreo (Jitomate mayoreo = 16).
+    assert next(p for p in c["productos"] if p["nombre"] == "Jitomate")["precio_referencia"] == 19
+
+
+def test_historial_ordenado_con_doce_semanas(client):
+    base = precios(client)["Jitomate"]
+    h = client.get(f"/publico/precios/{base['id']}/historial").json()
+    fechas = [p["fecha"] for p in h["puntos"]]
+    assert len(fechas) == 12 and fechas == sorted(fechas) and len(set(fechas)) == 12
+    assert h["nombre"] == "Jitomate" and h["unidad"] == "kg"
+    assert all(p["menudeo_minimo"] <= p["menudeo_promedio"] for p in h["puntos"])
+    cinco = client.get(f"/publico/precios/{base['id']}/historial", params={"semanas": 5}).json()["puntos"]
+    assert cinco == h["puntos"][-5:]
+
+
+def test_historial_termina_en_el_precio_actual(client):
+    for nombre, p in precios(client).items():
+        h = client.get(f"/publico/precios/{p['id']}/historial").json()["puntos"][-1]
+        assert h["menudeo_promedio"] == p["menudeo"]["promedio"], nombre
+        assert h["menudeo_minimo"] == p["menudeo"]["minimo"], nombre
+        assert h["mayoreo_promedio"] == p["mayoreo"]["promedio"], nombre  # None si no hay ofertas disponibles
+        assert h["mayoreo_minimo"] == p["mayoreo"]["minimo"], nombre
+
+
+def test_historial_excluye_ofertas_no_disponibles(client):
+    fresa = precios(client)["Fresa"]  # su única oferta de mayoreo no está disponible
+    puntos = client.get(f"/publico/precios/{fresa['id']}/historial").json()["puntos"]
+    assert all(p["mayoreo_promedio"] is None and p["mayoreo_minimo"] is None for p in puntos)
+
+
+def test_historial_producto_inexistente(client):
+    assert client.get("/publico/precios/9999/historial").status_code == 404
+    assert client.get("/publico/precios/1/historial", params={"semanas": 0}).status_code == 422

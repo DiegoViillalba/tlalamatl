@@ -5,6 +5,7 @@ import { MarcoTelefono } from '@/components/marco-telefono'
 import { rutasCliente } from '@/routes/cliente'
 import { rutasComercio } from '@/routes/comercio'
 import { Entrada } from '@/routes/entrada'
+import { Registro } from '@/routes/registro'
 import { rutasProveedor } from '@/routes/proveedor'
 import { rutasPublicas } from '@/routes/publico'
 
@@ -14,6 +15,7 @@ export const router = createBrowserRouter([
     children: [
       rutasPublicas, // "/" (mapa) y "/precios", sin login
       { path: 'entrar', element: <Entrada /> },
+      { path: 'registro', element: <Registro /> },
       rutasCliente,
       rutasComercio,
       rutasProveedor,

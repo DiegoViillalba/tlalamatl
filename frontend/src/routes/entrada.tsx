@@ -139,7 +139,8 @@ function EntrarConCorreo({ cliente }: { cliente: SupabaseClient }) {
     },
     onSuccess: (usuario) => {
       guardarSesion({ origen: 'supabase', usuario })
-      navegar(INICIO_POR_ROL[usuario.rol])
+      // alcaldia vacía = usuario nuevo que aún no completó su perfil
+      navegar(usuario.alcaldia === '' ? '/registro' : INICIO_POR_ROL[usuario.rol])
     },
     onError: (error) => toast.error(mensajeAuth(error, 'El código no es válido o ya venció.')),
   })

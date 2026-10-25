@@ -8,7 +8,7 @@ from sqlmodel import SQLModel, select
 
 from app.auth import ClaimsActuales, crear_token, es_de_supabase, usuario_actual
 from app.db import SessionDep
-from app.models import Comercio, Proveedor, Rol, Usuario
+from app.models import Categoria, Comercio, Dia, Proveedor, Rol, TipoProveedor, Usuario
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -96,6 +96,71 @@ def vincular_cuenta(claims: ClaimsActuales, session: SessionDep) -> Usuario:
     elif usuario.auth_id is not None:
         raise HTTPException(409, "Ese correo ya está ligado a otra cuenta")
     usuario.auth_id = claims["sub"]
+    session.add(usuario)
+    session.commit()
+    session.refresh(usuario)
+    return usuario
+
+
+class CompletarPerfilEntrada(SQLModel):
+    nombre: str
+    alcaldia: str
+    rol: Rol
+    # Solo cuando rol == comerciante
+    comercio_nombre: str | None = None
+    comercio_categoria: Categoria | None = None
+    comercio_ubicacion: str | None = None
+    comercio_dias: list[Dia] = []
+    comercio_telefono: str | None = None
+    comercio_whatsapp: str | None = None
+    # Solo cuando rol == proveedor
+    proveedor_nombre: str | None = None
+    proveedor_tipo: TipoProveedor | None = None
+    proveedor_zona: str | None = None
+    proveedor_telefono: str | None = None
+    proveedor_whatsapp: str | None = None
+
+
+@router.post("/completar-perfil")
+def completar_perfil(
+    entrada: CompletarPerfilEntrada,
+    usuario: Annotated[Usuario, Depends(usuario_actual)],
+    session: SessionDep,
+) -> Usuario:
+    """Completa el perfil de un usuario nuevo: asigna nombre, alcaldía y rol, y crea el Comercio o Proveedor si aplica."""
+    usuario.nombre = entrada.nombre.strip()
+    usuario.alcaldia = entrada.alcaldia
+    usuario.rol = entrada.rol
+
+    if entrada.rol == Rol.comerciante:
+        if not entrada.comercio_nombre or not entrada.comercio_categoria:
+            raise HTTPException(422, "Para comerciante se requiere nombre y categoría del comercio")
+        session.add(
+            Comercio(
+                dueno_id=usuario.id,
+                nombre=entrada.comercio_nombre.strip(),
+                categoria=entrada.comercio_categoria,
+                alcaldia=entrada.alcaldia,
+                ubicacion=entrada.comercio_ubicacion or "",
+                dias_operacion=entrada.comercio_dias,
+                telefono=entrada.comercio_telefono or None,
+                whatsapp=entrada.comercio_whatsapp or None,
+            )
+        )
+    elif entrada.rol == Rol.proveedor:
+        if not entrada.proveedor_nombre or not entrada.proveedor_tipo or not entrada.proveedor_zona:
+            raise HTTPException(422, "Para proveedor se requiere nombre, tipo y zona")
+        session.add(
+            Proveedor(
+                usuario_id=usuario.id,
+                nombre=entrada.proveedor_nombre.strip(),
+                tipo=entrada.proveedor_tipo,
+                zona=entrada.proveedor_zona,
+                telefono=entrada.proveedor_telefono or None,
+                whatsapp=entrada.proveedor_whatsapp or None,
+            )
+        )
+
     session.add(usuario)
     session.commit()
     session.refresh(usuario)

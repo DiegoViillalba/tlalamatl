@@ -1,17 +1,15 @@
 // Rutas y navegación del rol cliente. Dueña: rama rol/cliente.
-import { MapPin, ReceiptText, ShoppingBasket } from 'lucide-react'
+import { Heart, MapPin, MessageSquareText } from 'lucide-react'
 import type { RouteObject } from 'react-router'
 import { LayoutRol, type ItemNav } from '@/components/layout-rol'
-import { Pendiente } from '@/components/pendiente'
 import { RequiereRol } from '@/components/requiere-rol'
-import { MapaMercados } from '@/routes/publico/mapa/mapa'
-import { Explorar } from './explorar'
-import { MisPedidos } from './mis-pedidos'
+import { Favoritos } from './favoritos'
+import { MisComentarios } from './mis-comentarios'
 
 const nav: ItemNav[] = [
-  { a: '/cliente', etiqueta: 'Mapa', icono: MapPin, exacto: true },
-  { a: '/cliente/carrito', etiqueta: 'Carrito', icono: ShoppingBasket },
-  { a: '/cliente/pedidos', etiqueta: 'Mis pedidos', icono: ReceiptText },
+  { a: '/', etiqueta: 'Mapa', icono: MapPin },
+  { a: '/cliente', etiqueta: 'Favoritos', icono: Heart, exacto: true },
+  { a: '/cliente/comentarios', etiqueta: 'Mis comentarios', icono: MessageSquareText },
 ]
 
 export const rutasCliente: RouteObject = {
@@ -22,9 +20,7 @@ export const rutasCliente: RouteObject = {
     </RequiereRol>
   ),
   children: [
-    { index: true, element: <MapaMercados /> },
-    { path: 'lista', element: <Explorar /> },
-    { path: 'carrito', element: <Pendiente titulo="Carrito" doc="docs/alcance/cliente.md" /> },
-    { path: 'pedidos', element: <MisPedidos /> },
+    { index: true, element: <Favoritos /> },
+    { path: 'comentarios', element: <MisComentarios /> },
   ],
 }

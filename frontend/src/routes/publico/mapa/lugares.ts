@@ -17,6 +17,8 @@ export type Lugar = {
   diasFuente: boolean
   horario?: string
   giro?: string
+  /** Categorías de giro para filtrar (Abasto, Comida, Ropa y calzado…); `giro` conserva el texto de la fuente */
+  giros?: string[]
   locales?: number
   oferentes?: number
   ruta?: string

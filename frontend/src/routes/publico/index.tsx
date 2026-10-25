@@ -1,8 +1,9 @@
-// Rutas públicas (sin login): mapa y dashboard de precios. Dueña: rama rol/cliente.
+// Rutas públicas (sin login): mapa, croquis de mercados y dashboard de precios. Dueña: rama rol/cliente.
 import { ChartColumn, CircleUser, Heart, LogIn, MapPin, MessageSquareText } from 'lucide-react'
 import type { RouteObject } from 'react-router'
 import { LayoutRol, type ItemNav } from '@/components/layout-rol'
 import { INICIO_POR_ROL, useSesion } from '@/lib/sesion'
+import { Croquis } from './croquis/croquis'
 import { MapaMercados } from './mapa/mapa'
 import { Precios } from './precios/precios'
 
@@ -29,5 +30,6 @@ export const rutasPublicas: RouteObject = {
   children: [
     { index: true, element: <MapaMercados /> },
     { path: 'precios', element: <Precios /> },
+    { path: 'croquis/:mercadoId', element: <Croquis /> },
   ],
 }

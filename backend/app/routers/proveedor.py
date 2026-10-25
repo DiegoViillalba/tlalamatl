@@ -12,6 +12,7 @@ from pydantic import field_validator
 from sqlmodel import Field, SQLModel, col, func, select
 
 from app.auth import require_rol
+from app.catalogo import buscar_producto_base
 from app.db import SessionDep
 from app.estados import validar_orden, validar_ruta
 from app.models import (
@@ -25,6 +26,7 @@ from app.models import (
     OrdenAbastoItem,
     OrdenAbastoItemLeer,
     OrdenAbastoLeer,
+    ProductoBase,
     Proveedor,
     Rol,
     RutaEntrega,
@@ -71,6 +73,8 @@ class OfertaCrear(SQLModel):
     precio_mayoreo: float = Field(gt=0)
     cantidad_minima: float = Field(gt=0)
     disponible: bool = True
+    # Producto del catálogo común (`/publico/productos-base`). Si no se manda, se busca por el nombre.
+    producto_base_id: int | None = None
 
 
 class OfertaActualizar(SQLModel):
@@ -79,6 +83,9 @@ class OfertaActualizar(SQLModel):
     precio_mayoreo: float | None = Field(default=None, gt=0)
     cantidad_minima: float | None = Field(default=None, gt=0)
     disponible: bool | None = None
+    # Con un id se enlaza a ese producto base; con `sin_catalogo` se quita el enlace.
+    producto_base_id: int | None = None
+    sin_catalogo: bool = False
 
 
 class CambioEstadoOrden(SQLModel):
@@ -192,10 +199,21 @@ def listar_ofertas(usuario: ProveedorActual, session: SessionDep) -> list[Oferta
     return list(session.exec(consulta).all())
 
 
+def _base_existente(producto_base_id: int, session: SessionDep) -> ProductoBase:
+    base = session.get(ProductoBase, producto_base_id)
+    if base is None:
+        raise HTTPException(422, "El producto del catálogo no existe")
+    return base
+
+
 @router.post("/ofertas", status_code=201)
 def crear_oferta(datos: OfertaCrear, usuario: ProveedorActual, session: SessionDep) -> OfertaProveedor:
     proveedor = _mi_proveedor(usuario, session)
     oferta = OfertaProveedor(**datos.model_dump(), proveedor_id=proveedor.id)
+    if datos.producto_base_id is not None:
+        _base_existente(datos.producto_base_id, session)
+    elif (base := buscar_producto_base(session, datos.producto)) is not None:
+        oferta.producto_base_id = base.id
     session.add(oferta)
     session.commit()
     session.refresh(oferta)
@@ -208,7 +226,16 @@ def actualizar_oferta(
 ) -> OfertaProveedor:
     oferta = _mi_oferta(oferta_id, _mi_proveedor(usuario, session), session)
     # Un null explícito no borra nada: ningún campo de la oferta es opcional.
-    oferta.sqlmodel_update(cambios.model_dump(exclude_unset=True, exclude_none=True))
+    datos = cambios.model_dump(exclude_unset=True, exclude_none=True, exclude={"sin_catalogo"})
+    if cambios.sin_catalogo:
+        datos["producto_base_id"] = None
+    elif "producto_base_id" in datos:
+        _base_existente(datos["producto_base_id"], session)
+    elif "producto" in datos and oferta.producto_base_id is None:
+        # Si cambió el nombre y la oferta no estaba enlazada, se intenta de nuevo con el nombre nuevo.
+        base = buscar_producto_base(session, datos["producto"])
+        datos["producto_base_id"] = base.id if base else None
+    oferta.sqlmodel_update(datos)
     session.add(oferta)
     session.commit()
     session.refresh(oferta)

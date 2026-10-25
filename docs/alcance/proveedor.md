@@ -60,6 +60,7 @@ Notas del backend:
 - `DELETE /proveedor/ofertas/{id}` responde 409 si la oferta ya está en órdenes de abasto; hay que marcarla como no disponible.
 - `GET /proveedor/compradores` devuelve `{ comercio, ordenes, ultima_orden }`, del más reciente al más antiguo.
 - Los recursos de otro proveedor responden 404.
+- **Catálogo y dashboard:** el dashboard de precios solo cuenta las ofertas con `producto_base_id`. Al crear una oferta se enlaza sola por el nombre (`buscar_producto_base`, en `main`); también se puede mandar `producto_base_id` (el formulario ofrece el catálogo de `GET /publico/productos-base`) o quitar el enlace con `sin_catalogo`. Una oferta sin enlace se marca en la lista como "Fuera del dashboard de precios".
 - **Fletes compartidos:** el costo se reparte en partes iguales entre los comercios distintos de la ruta (`cuota_flete`), y se recalcula al entrar un comercio. Al pasar la ruta a `en_camino`, sus órdenes `confirmadas` pasan a `enviada` y las solicitudes pendientes se rechazan; al cancelarla, las órdenes quedan libres. Una ruta puede crearse con un solo comercio para que otros se sumen. El lado comercio (ver rutas abiertas y pedir sumarse) está documentado en `compartido.md`, sección "Fletes compartidos", y lo implementa `rol/comercio`.
 
 ## Criterios de aceptación

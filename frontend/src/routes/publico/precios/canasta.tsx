@@ -1,11 +1,12 @@
 // "Tu canasta de temporada": canasta sugerida con gráfica de barras (más barato vs. promedio), total en vivo,
 // productos para agregar y dónde comprar cada cosa. La selección se guarda en localStorage.
 import { useQuery } from '@tanstack/react-query'
-import { ChartNoAxesColumn, Minus, Plus, RotateCcw, ShoppingBasket } from 'lucide-react'
+import { Minus, Plus, RotateCcw, ShoppingBasket } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { publicoCanastaOptions } from '@/api/@tanstack/react-query.gen'
 import type { ProductoCanasta } from '@/api'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { ImagenProducto } from '@/components/imagen-producto'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -70,7 +71,7 @@ function GraficaCanasta({
                   className="flex min-w-0 items-center gap-1.5 text-left text-sm font-medium underline-offset-2 hover:underline"
                   aria-label={`Ver historial de ${p.nombre}`}
                 >
-                  <ChartNoAxesColumn className="size-3.5 shrink-0 text-muted-foreground" />
+                  <ImagenProducto nombre={p.nombre} className="size-8" />
                   <span className="truncate">{p.nombre}</span>
                   <span className="shrink-0 text-xs font-normal text-muted-foreground">
                     {p.cantidad_sugerida} {p.unidad}
@@ -239,6 +240,7 @@ export function Canasta({
                         aria-label={`Agregar ${p.nombre} a la canasta`}
                       >
                         <Plus />
+                        <ImagenProducto nombre={p.nombre} className="size-5 rounded" />
                         {p.nombre}
                         <span className="text-xs text-muted-foreground">{pesos(p.precio_referencia)}</span>
                       </Button>

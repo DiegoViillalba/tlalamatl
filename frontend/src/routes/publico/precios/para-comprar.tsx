@@ -1,6 +1,7 @@
 // Vista del comprador: dónde está más barato cada producto y qué está de temporada.
 import { Leaf, Sparkles } from 'lucide-react'
 import type { PrecioProducto } from '@/api'
+import { ImagenProducto } from '@/components/imagen-producto'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { CATEGORIAS, CATEGORIAS_PRODUCTO, MESES, pesos } from '@/lib/formato'
@@ -39,6 +40,7 @@ export function ResumenTemporada({
         <ul className="grid grid-cols-2 gap-2">
           {mejores.map((p) => (
             <li key={p.id} className="rounded-lg bg-background p-2.5">
+              <ImagenProducto nombre={p.nombre} className="mb-2 aspect-video h-auto w-full" />
               <p className="text-sm font-medium">{p.nombre}</p>
               <p className="text-lg font-semibold leading-tight">
                 {pesos(p.menudeo.minimo!)}
@@ -65,9 +67,12 @@ export function TarjetaComprar({
     <Card size="sm">
       <CardContent className="space-y-3">
         <div className="flex items-start justify-between gap-2">
-          <div>
-            <h3 className="text-base font-semibold">{p.nombre}</h3>
-            <p className="text-xs text-muted-foreground">{CATEGORIAS_PRODUCTO[p.categoria] ?? p.categoria}</p>
+          <div className="flex min-w-0 flex-1 items-center gap-3">
+            <ImagenProducto nombre={p.nombre} className="size-14" />
+            <div>
+              <h3 className="text-base font-semibold">{p.nombre}</h3>
+              <p className="text-xs text-muted-foreground">{CATEGORIAS_PRODUCTO[p.categoria] ?? p.categoria}</p>
+            </div>
           </div>
           <div className="flex flex-wrap justify-end gap-1">
             {p.de_temporada && (

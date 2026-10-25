@@ -5,6 +5,7 @@ import { Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { publicoPreciosOptions } from '@/api/@tanstack/react-query.gen'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { CreditosImagenes } from '@/components/imagen-producto'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -161,6 +162,7 @@ export function Precios() {
           })}
         </div>
       )}
+      {consulta.isSuccess && <CreditosImagenes nombres={visibles.map((p) => p.nombre)} />}
       <HistorialPrecios producto={historial} alCerrar={() => setHistorial(null)} />
     </div>
   )

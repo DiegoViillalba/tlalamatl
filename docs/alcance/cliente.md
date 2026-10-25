@@ -6,7 +6,7 @@ Dueña: rama `rol/cliente`. También lee `docs/alcance/compartido.md`.
 
 ## Objetivo
 
-Que una persona en la CDMX encuentre rápido qué tianguis, mercado o bodega de la Central de Abasto está abierto hoy cerca de ella, vea sus productos y precios y haga un pedido para recoger.
+Que una persona en la CDMX encuentre rápido qué tianguis, mercado o bodega de la Central de Abasto está abierto hoy cerca de ella, vea sus productos (entregable mínimo).
 
 ## Usuario y contexto de uso
 
@@ -17,9 +17,7 @@ Que una persona en la CDMX encuentre rápido qué tianguis, mercado o bodega de 
 
 - **Explorar comercios**, con filtros por categoría (Central de Abasto, mercado fijo, sobre ruedas, tianguis), por alcaldía y por "abierto hoy".
 - **Ver el detalle de un comercio:** ubicación, días de operación y productos con precio, unidad y disponibilidad.
-- **Carrito:** agregar y quitar productos y cambiar cantidades. Un carrito por comercio.
-- **Confirmar pedido**, que se crea en estado `creado`.
-- **Mis pedidos:** lista con estado (creado, aceptado, listo, entregado, cancelado) y detalle de items.
+- **Lista de favoritos:** comercios cerca de mi, comercios favoritos
 
 ## Fuera de alcance
 
@@ -27,14 +25,12 @@ Que una persona en la CDMX encuentre rápido qué tianguis, mercado o bodega de 
 - Envío a domicilio.
 - Reseñas o calificaciones de comercios.
 - Comparar precios entre comercios.
-- Mapa interactivo.
+
 
 ## Pantallas
 
 1. **Explorar (`/cliente`):** lista de comercios con filtros. *Versión inicial hecha: lista sin filtros.*
 2. **Detalle de comercio (`/cliente/comercio/:id`):** info y productos con "Agregar". *Por hacer.*
-3. **Carrito (`/cliente/carrito`):** items, total y "Confirmar pedido". *Por hacer (hoy es un marcador `Pendiente`).*
-4. **Mis pedidos (`/cliente/pedidos`):** lista con estado. *Versión inicial hecha.*
 
 ## Endpoints que consume
 
@@ -51,13 +47,8 @@ Que una persona en la CDMX encuentre rápido qué tianguis, mercado o bodega de 
 
 - [ ] Con el filtro "abierto hoy" activo solo aparecen comercios cuyo `dias_operacion` incluye el día de hoy.
 - [ ] Se puede filtrar por categoría y por alcaldía, y los filtros se combinan.
-- [ ] El carrito sobrevive a navegar entre pantallas y se vacía al confirmar.
-- [ ] Al confirmar, el pedido aparece en "Mis pedidos" con estado "Nuevo".
-- [ ] Crear un pedido a un comercio cerrado hoy o con productos de otro comercio responde con un error claro.
-- [ ] Paso 1 del flujo demo: el cliente pide a un tianguis abierto hoy.
+- [ ] Se puede agregar mercados o tianguis a favoritos
 
 ## Preguntas abiertas
 
-- ¿Validamos stock al crear el pedido o solo cuando el comercio lo acepta?
-- ¿Permitimos pedir a un comercio que hoy está cerrado (para recoger otro día)?
-- ¿El carrito se guarda en `localStorage` o solo en memoria?
+- ¿La lista de favoritos se guarda en `localStorage` o solo en memoria?

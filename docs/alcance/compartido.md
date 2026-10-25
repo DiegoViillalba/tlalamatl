@@ -57,7 +57,7 @@ Tlalamatl **no es un e-commerce, es una plataforma de contacto entre personas**:
 | `lat`/`lng` en `Proveedor` | Mostrar proveedores en el mapa | Público | ✅ en modelo y seed |
 | Tabla `Favorito` (usuario, comercio; sin repetidos) | Favoritos del cliente | `rol/cliente` | ✅ en modelo y seed |
 | Tabla `Comentario` (usuario, comercio, texto ≤ 500, fecha) | Comentarios en la ficha | `rol/cliente`, `rol/comercio` | ✅ en modelo y seed |
-| Tabla `ProductoBase` (por confirmar, ver preguntas) | Agrupar precios por producto, canasta básica y temporada | Público, `rol/comercio`, `rol/proveedor` | ⏳ después |
+| Tabla `ProductoBase` (nombre único, unidad, categoría, `canasta_basica`, `meses_temporada`) y `producto_base_id` opcional en `Producto` y `OfertaProveedor` | Agrupar precios por producto, canasta básica y temporada | Público, `rol/comercio`, `rol/proveedor` | ✅ en modelo y seed |
 | `RutaEntrega` y `ruta_id` en `OrdenAbasto` | Rutas compartidas | `rol/proveedor` | ⏳ después |
 
 En el seed, los teléfonos son **ficticios**: tienen la forma `5500xxxxxx`, un rango que en la CDMX no se asigna. Nunca se usan números reales. Un puesto (Pollería El Güero) no tiene WhatsApp, para probar ese caso en la ficha.
@@ -126,7 +126,7 @@ solicitada ──► confirmada ──► enviada ──► recibida
 
 1. **Mapa (`/`, público):** mapa con búsqueda, filtros (categoría, "abierto hoy") y lista por distancia. La navegación inferior tiene Mapa, Precios y Entrar (o "Mi espacio" si hay sesión). *Hecho: sin sesión muestra "Entrar" en el encabezado.*
 2. **Ficha interactiva (público):** hoja inferior sobre el mapa con los detalles del comercio o proveedor, sus productos con precio, sus comentarios y los botones **Llamar** y **WhatsApp**. Los botones "Favorito" y "Comentar" piden sesión. *Por hacer.*
-3. **Dashboard de precios (`/precios`, público):** productos de temporada y canasta básica, con precio mínimo y promedio por producto y dónde encontrarlo. *Por hacer: la ruta existe con un marcador `Pendiente`.*
+3. **Dashboard de precios (`/precios`, público):** productos de temporada y canasta básica, con precio mínimo y promedio por producto y dónde encontrarlo. Pestañas "Para comprar" y "Para vender" (proveedores y comerciantes). *Hecha.*
 4. **Entrar (`/entrar`):** marca Tlalamatl y una tarjeta "Entrar como…" por rol, con sus usuarios demo y "Volver al mapa". *Hecha.* Las rutas de rol sin sesión redirigen aquí.
 5. **Layout de rol:** encabezado, contenido y navegación inferior (lo usan las 3 interfaces). *Hecho.*
 
@@ -142,7 +142,7 @@ solicitada ──► confirmada ──► enviada ──► recibida
 | GET | `/publico/comercios/{id}` | `publicoObtenerComercio` | ✅ hecho; incluye `telefono` y `whatsapp` |
 | GET | `/publico/comercios/{id}/productos` | `publicoListarProductos` | ✅ hecho |
 | GET | `/publico/proveedores` | `publicoListarProveedores` | ⏳ por crear: proveedores con coordenadas, tipo y contacto, para mostrarlos en el mapa. Los lugares reales ya no necesitan endpoint, porque son estáticos en el frontend. |
-| GET | `/publico/precios?temporada` | `publicoPrecios` | ⏳ por crear: agrega `Producto.precio` y `OfertaProveedor.precio_mayoreo` por producto. Requiere un catálogo común de productos (ver preguntas). |
+| GET | `/publico/precios?temporada&canasta&categoria&mes` | `publicoPrecios` | ✅ hecho: por `ProductoBase`, menudeo y mayoreo (mín/promedio/máx/n), dónde está más barato (comercio y proveedor, con contacto) y demanda por reabasto. Sin login. |
 | GET | `/publico/comercios/{id}/comentarios` | `publicoListarComentarios` | ⏳ por crear (la tabla `Comentario` ya existe). |
 
 ## Criterios de aceptación
@@ -165,8 +165,8 @@ solicitada ──► confirmada ──► enviada ──► recibida
 ## Preguntas abiertas
 
 - ¿Qué librería de mapas usamos? Leaflet o MapLibre con tiles de OpenStreetMap quedan fuera del stack acordado, así que hay que aprobarla antes de instalarla.
-- **Catálogo común de productos:** para agregar precios, "Jitomate saladet" de un comercio y de un proveedor tiene que ser el mismo producto. ¿Creamos una tabla `ProductoBase` (nombre, unidad, ¿es canasta básica?, meses de temporada) a la que apunten `Producto` y `OfertaProveedor`?
-- ¿Cómo definimos "de temporada"? ¿Por meses del año en `ProductoBase`?
-- ¿Mostramos en el dashboard el precio de menudeo (comercios) y el de mayoreo (proveedores) por separado?
+- ~~**Catálogo común de productos**~~ Resuelta: tabla `ProductoBase` (nombre, unidad, categoría, `canasta_basica`, `meses_temporada`) a la que apuntan `Producto` y `OfertaProveedor` con `producto_base_id` (opcional). El seed enlaza por nombre; un producto nuevo de un comercio sin `producto_base_id` no aparece en el dashboard.
+- ~~¿Cómo definimos "de temporada"?~~ Resuelta: por meses (1–12) en `ProductoBase.meses_temporada`. Un producto es "de temporada" si el mes consultado está en la lista; lista vacía = todo el año y **no** se marca de temporada.
+- ~~¿Menudeo y mayoreo?~~ Resuelta: se muestran por separado (`menudeo` de `Producto.precio`, `mayoreo` de ofertas con `disponible=True`). La "demanda por reabasto" cuenta los comercios que venden el producto y cuántos tienen `stock <= stock_minimo`.
 - ¿Quién puede comentar: solo clientes sobre comercios, o también comerciantes sobre proveedores? ¿Hace falta moderación o borrar comentarios propios?
 - ¿Los proveedores también aparecen en el mapa público, o solo los ven los comerciantes con sesión?

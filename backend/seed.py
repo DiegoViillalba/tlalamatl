@@ -24,6 +24,7 @@ from app.models import (
     Pedido,
     PedidoItem,
     Producto,
+    ProductoBase,
     Proveedor,
     Rol,
     TipoProveedor,
@@ -33,6 +34,65 @@ from app.models import (
 
 TODOS_LOS_DIAS = list(Dia)
 DIAS = list(Dia)
+
+
+# Catálogo común de productos: (nombre, unidad, categoría, canasta básica, meses de temporada).
+# Lista de meses vacía = todo el año. Temporadas aproximadas para México central.
+PRODUCTOS_BASE = [
+    ("Jitomate", "kg", "verdura", True, []),
+    ("Cebolla", "kg", "verdura", True, []),
+    ("Chile serrano", "kg", "verdura", True, []),
+    ("Papa", "kg", "verdura", True, []),
+    ("Zanahoria", "kg", "verdura", True, []),
+    ("Calabacita", "kg", "verdura", True, [5, 6, 7, 8, 9, 10]),
+    ("Lechuga", "pieza", "verdura", False, []),
+    ("Cilantro", "manojo", "verdura", False, []),
+    ("Nopal", "kg", "verdura", False, [3, 4, 5, 6, 7, 8, 9, 10]),
+    ("Brócoli", "kg", "verdura", False, [10, 11, 12, 1, 2, 3]),
+    ("Chayote", "kg", "verdura", False, [8, 9, 10, 11, 12]),
+    ("Jícama", "kg", "verdura", False, [10, 11, 12, 1, 2, 3, 4]),
+    ("Limón", "kg", "fruta", True, []),
+    ("Plátano", "kg", "fruta", True, []),
+    ("Aguacate", "kg", "fruta", True, []),
+    ("Papaya", "kg", "fruta", False, []),
+    ("Manzana", "kg", "fruta", True, [9, 10, 11, 12]),
+    ("Naranja", "kg", "fruta", True, [10, 11, 12, 1, 2, 3]),
+    ("Mandarina", "kg", "fruta", False, [10, 11, 12, 1]),
+    ("Guayaba", "kg", "fruta", False, [9, 10, 11, 12, 1, 2]),
+    ("Granada", "kg", "fruta", False, [8, 9, 10, 11]),
+    ("Mango", "kg", "fruta", False, [3, 4, 5, 6, 7, 8]),
+    ("Fresa", "kg", "fruta", False, [12, 1, 2, 3, 4, 5]),
+    ("Piña", "pieza", "fruta", False, [3, 4, 5, 6, 7]),
+    ("Frijol", "kg", "abarrote", True, []),
+    ("Arroz", "kg", "abarrote", True, []),
+    ("Azúcar", "kg", "abarrote", True, []),
+    ("Chile guajillo", "kg", "abarrote", False, []),
+    ("Chile ancho", "kg", "abarrote", False, []),
+    ("Chile de árbol", "kg", "abarrote", False, []),
+    ("Pimienta gorda", "kg", "abarrote", False, []),
+    ("Pechuga de pollo", "kg", "proteina", True, []),
+    ("Pierna y muslo", "kg", "proteina", True, []),
+    ("Huevo", "kg", "proteina", True, []),
+]
+
+# Nombre del producto de un comercio u oferta -> producto base. Si no está aquí, se busca el mismo nombre.
+ALIAS_BASE = {
+    "Jitomate saladet": "Jitomate",
+    "Cebolla blanca": "Cebolla",
+    "Nopales limpios": "Nopal",
+    "Papaya maradol": "Papaya",
+    "Plátano tabasco": "Plátano",
+    "Limón con semilla": "Limón",
+    "Lechuga romana": "Lechuga",
+    "Mango ataulfo": "Mango",
+    "Piña miel": "Piña",
+    "Aguacate hass": "Aguacate",
+    "Huevo blanco": "Huevo",
+    "Papa blanca": "Papa",
+    "Frijol negro": "Frijol",
+    "Arroz súper extra": "Arroz",
+    "Azúcar estándar": "Azúcar",
+}
 
 
 def telefono_ficticio(n: int) -> str:
@@ -63,6 +123,20 @@ def sembrar(session: Session, hoy: Dia | None = None) -> None:
         usuario(Rol.cliente, 3, "Benito Juárez"),
     ]
 
+    # --- Catálogo común de productos --------------------------------------------------
+    bases: dict[str, ProductoBase] = {}
+    for nombre, unidad, categoria, canasta, meses in PRODUCTOS_BASE:
+        base = ProductoBase(
+            nombre=nombre, unidad=unidad, categoria=categoria, canasta_basica=canasta, meses_temporada=meses
+        )
+        session.add(base)
+        bases[nombre] = base
+    session.flush()
+
+    def base_id(nombre: str) -> int | None:
+        base = bases.get(ALIAS_BASE.get(nombre, nombre))
+        return base.id if base else None
+
     # --- Comercios (2 por categoría) --------------------------------------------------
     # (categoría, nombre, alcaldía, ubicación, lat, lng, días, productos)
     # Producto: (nombre, precio, stock, unidad, stock_minimo)
@@ -81,6 +155,8 @@ def sembrar(session: Session, hoy: Dia | None = None) -> None:
                 ("Chile serrano", 45, 6, "kg", 2),
                 ("Cilantro", 10, 20, "manojo", 5),
                 ("Nopales limpios", 35, 10, "kg", 3),
+                ("Chayote", 22, 3, "kg", 4),
+                ("Jícama", 20, 12, "kg", 4),
             ],
         ),
         (
@@ -109,6 +185,10 @@ def sembrar(session: Session, hoy: Dia | None = None) -> None:
                 ("Plátano tabasco", 22, 30, "kg", 8),
                 ("Limón con semilla", 32, 18, "kg", 5),
                 ("Zanahoria", 18, 20, "kg", 5),
+                ("Naranja", 14, 40, "kg", 10),
+                ("Mandarina", 28, 4, "kg", 5),
+                ("Guayaba", 30, 15, "kg", 5),
+                ("Manzana", 45, 20, "kg", 6),
             ],
         ),
         (
@@ -122,6 +202,8 @@ def sembrar(session: Session, hoy: Dia | None = None) -> None:
                 ("Lechuga romana", 15, 30, "pieza", 8),
                 ("Brócoli", 38, 12, "kg", 4),
                 ("Calabacita", 26, 14, "kg", 4),
+                ("Chayote", 24, 10, "kg", 4),
+                ("Jícama", 18, 15, "kg", 4),
             ],
         ),
         (
@@ -136,6 +218,12 @@ def sembrar(session: Session, hoy: Dia | None = None) -> None:
                 ("Fresa", 60, 10, "kg", 3),
                 ("Piña miel", 35, 15, "pieza", 4),
                 ("Aguacate hass", 70, 12, "kg", 4),
+                ("Granada", 55, 8, "kg", 3),
+                ("Guayaba", 38, 3, "kg", 4),
+                ("Manzana", 52, 10, "kg", 4),
+                ("Mandarina", 32, 12, "kg", 4),
+                ("Plátano tabasco", 25, 4, "kg", 8),
+                ("Limón con semilla", 36, 9, "kg", 4),
             ],
         ),
         (
@@ -162,6 +250,11 @@ def sembrar(session: Session, hoy: Dia | None = None) -> None:
                 ("Jitomate saladet", 19, 300, "kg", 50),
                 ("Papa blanca", 17, 400, "kg", 80),
                 ("Cebolla blanca", 15, 250, "kg", 50),
+                ("Naranja", 9, 600, "kg", 100),
+                ("Manzana", 32, 200, "kg", 40),
+                ("Zanahoria", 11, 300, "kg", 60),
+                ("Limón con semilla", 22, 150, "kg", 40),
+                ("Plátano tabasco", 16, 350, "kg", 70),
             ],
         ),
         (
@@ -175,6 +268,7 @@ def sembrar(session: Session, hoy: Dia | None = None) -> None:
                 ("Frijol negro", 32, 500, "kg", 100),
                 ("Arroz súper extra", 26, 450, "kg", 100),
                 ("Azúcar estándar", 28, 300, "kg", 60),
+                ("Huevo blanco", 38, 20, "kg", 100),
             ],
         ),
     ]
@@ -203,6 +297,7 @@ def sembrar(session: Session, hoy: Dia | None = None) -> None:
         for p_nombre, precio, stock, unidad, minimo in prods:
             p = Producto(
                 comercio_id=comercio.id,
+                producto_base_id=base_id(p_nombre),
                 nombre=p_nombre,
                 precio=precio,
                 stock=stock,
@@ -215,7 +310,7 @@ def sembrar(session: Session, hoy: Dia | None = None) -> None:
 
     # --- Proveedores ------------------------------------------------------------------
     # (nombre, tipo, zona, alcaldía del usuario, ofertas)
-    # Oferta: (producto, unidad, precio_mayoreo, cantidad_minima)
+    # Oferta: (producto, unidad, precio_mayoreo, cantidad_minima[, disponible])
     proveedores_def = [
         (
             "Distribuidora Hortícola del Valle",
@@ -227,6 +322,9 @@ def sembrar(session: Session, hoy: Dia | None = None) -> None:
                 ("Cebolla blanca", "kg", 13, 20),
                 ("Chile serrano", "kg", 30, 10),
                 ("Papa blanca", "kg", 14, 50),
+                ("Zanahoria", "kg", 9, 50),
+                ("Chayote", "kg", 14, 30),
+                ("Plátano tabasco", "kg", 12, 50),
             ],
         ),
         (
@@ -238,6 +336,8 @@ def sembrar(session: Session, hoy: Dia | None = None) -> None:
                 ("Frijol negro", "kg", 27, 50),
                 ("Arroz súper extra", "kg", 21, 50),
                 ("Chile guajillo", "kg", 130, 5),
+                ("Azúcar estándar", "kg", 23, 50),
+                ("Huevo blanco", "kg", 36, 30),
             ],
         ),
         (
@@ -249,6 +349,9 @@ def sembrar(session: Session, hoy: Dia | None = None) -> None:
                 ("Cilantro", "manojo", 5, 50),
                 ("Lechuga romana", "pieza", 8, 40),
                 ("Nopales limpios", "kg", 20, 20),
+                ("Jícama", "kg", 12, 30),
+                ("Brócoli", "kg", 24, 20),
+                ("Zanahoria", "kg", 10, 40),
             ],
         ),
         (
@@ -259,6 +362,11 @@ def sembrar(session: Session, hoy: Dia | None = None) -> None:
             [
                 ("Aguacate hass", "kg", 48, 30),
                 ("Limón con semilla", "kg", 20, 30),
+                ("Guayaba", "kg", 20, 30),
+                ("Mandarina", "kg", 18, 30),
+                ("Mango ataulfo", "kg", 26, 30),
+                # Sin disponibilidad: no debe contar en el dashboard.
+                ("Fresa", "kg", 38, 20, False),
             ],
         ),
     ]
@@ -290,13 +398,15 @@ def sembrar(session: Session, hoy: Dia | None = None) -> None:
         session.flush()
         proveedores.append(prov)
         ofertas[prov.id] = []
-        for producto, unidad, precio, minimo in ofs:
+        for producto, unidad, precio, minimo, *resto in ofs:
             o = OfertaProveedor(
                 proveedor_id=prov.id,
+                producto_base_id=base_id(producto),
                 producto=producto,
                 unidad=unidad,
                 precio_mayoreo=precio,
                 cantidad_minima=minimo,
+                disponible=resto[0] if resto else True,
             )
             session.add(o)
             ofertas[prov.id].append(o)

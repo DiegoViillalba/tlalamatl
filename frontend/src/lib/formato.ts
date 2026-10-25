@@ -30,13 +30,52 @@ export const TIPOS_PROVEEDOR: Record<TipoProveedor, string> = {
   almacen: 'Almacén',
 }
 
-// EstadoOrden se agrega aquí cuando algún endpoint la exponga en el cliente generado.
+// Mismos valores que `EstadoOrden` en backend/app/models.py. No se importa de '@/api' porque el cliente
+// generado solo lo exporta cuando algún endpoint lo usa; el tipo del cliente es compatible con este.
+export const ESTADOS_ORDEN = {
+  solicitada: 'Nueva',
+  confirmada: 'Confirmada',
+  enviada: 'Enviada',
+  recibida: 'Recibida',
+  rechazada: 'Rechazada',
+} as const
+
+export type EstadoOrden = keyof typeof ESTADOS_ORDEN
+
 export const ESTADOS_PEDIDO: Record<EstadoPedido, string> = {
   creado: 'Nuevo',
   aceptado: 'Aceptado',
   listo: 'Listo para recoger',
   entregado: 'Entregado',
   cancelado: 'Cancelado',
+}
+
+// Categorías de ProductoBase (dashboard de precios). Una categoría nueva sin etiqueta se muestra tal cual.
+export const CATEGORIAS_PRODUCTO: Record<string, string> = {
+  fruta: 'Frutas',
+  verdura: 'Verduras',
+  abarrote: 'Abarrotes',
+  proteina: 'Carne y huevo',
+}
+
+export const MESES = [
+  'Enero',
+  'Febrero',
+  'Marzo',
+  'Abril',
+  'Mayo',
+  'Junio',
+  'Julio',
+  'Agosto',
+  'Septiembre',
+  'Octubre',
+  'Noviembre',
+  'Diciembre',
+]
+
+/** Mes actual (1-12) en horario de la CDMX. */
+export function mesActual() {
+  return Number(new Intl.DateTimeFormat('es-MX', { month: 'numeric', timeZone: 'America/Mexico_City' }).format(new Date()))
 }
 
 const pesosMx = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' })

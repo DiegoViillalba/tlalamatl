@@ -120,9 +120,25 @@ class Proveedor(SQLModel, table=True):
     whatsapp: str | None = None
 
 
+class ProductoBase(SQLModel, table=True):
+    """Catálogo común: "Jitomate" de un comercio y de un proveedor es el mismo producto base.
+
+    Permite agrupar precios (dashboard `/publico/precios`), marcar la canasta básica y la temporada.
+    """
+
+    id: int | None = Field(default=None, primary_key=True)
+    nombre: str = Field(unique=True)
+    unidad: str  # unidad de referencia: kg, pieza, manojo...
+    categoria: str  # fruta, verdura, abarrote, proteina
+    canasta_basica: bool = False
+    # Meses (1-12) en que es de temporada. Lista vacía = todo el año.
+    meses_temporada: list[int] = Field(default_factory=list, sa_column=Column(JSON))
+
+
 class Producto(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     comercio_id: int = Field(foreign_key="comercio.id", index=True)
+    producto_base_id: int | None = Field(default=None, foreign_key="productobase.id", index=True)
     nombre: str
     precio: float
     stock: float
@@ -133,6 +149,7 @@ class Producto(SQLModel, table=True):
 class OfertaProveedor(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     proveedor_id: int = Field(foreign_key="proveedor.id", index=True)
+    producto_base_id: int | None = Field(default=None, foreign_key="productobase.id", index=True)
     producto: str  # producto genérico, p. ej. "Jitomate saladet"
     unidad: str
     precio_mayoreo: float

@@ -1,0 +1,215 @@
+"""Modelo de datos de Tlalamatl: fuente única de verdad.
+
+Archivo COMPARTIDO: los cambios se hacen en `main` y luego cada rama hace `git merge main`
+(ver AGENTS.md, "Trabajo en ramas").
+"""
+
+from datetime import datetime
+from enum import Enum
+from zoneinfo import ZoneInfo
+
+from sqlalchemy.types import JSON, TypeDecorator
+from sqlmodel import Column, Field, Relationship, SQLModel
+
+ZONA_CDMX = ZoneInfo("America/Mexico_City")
+
+
+def ahora() -> datetime:
+    return datetime.now(ZONA_CDMX)
+
+
+# --- Enums ---------------------------------------------------------------------------
+
+
+class Rol(str, Enum):
+    cliente = "cliente"
+    comerciante = "comerciante"
+    proveedor = "proveedor"
+
+
+class Categoria(str, Enum):
+    central_abasto = "central_abasto"
+    mercado_fijo = "mercado_fijo"
+    mercado_sobre_ruedas = "mercado_sobre_ruedas"
+    tianguis = "tianguis"
+
+
+class TipoProveedor(str, Enum):
+    productor = "productor"
+    mayorista = "mayorista"
+    almacen = "almacen"
+
+
+class Dia(str, Enum):
+    lun = "lun"
+    mar = "mar"
+    mie = "mie"
+    jue = "jue"
+    vie = "vie"
+    sab = "sab"
+    dom = "dom"
+
+    @classmethod
+    def hoy(cls) -> "Dia":
+        """Día de la semana actual en horario de la CDMX."""
+        return list(cls)[ahora().weekday()]
+
+
+class EstadoPedido(str, Enum):
+    creado = "creado"
+    aceptado = "aceptado"
+    listo = "listo"
+    entregado = "entregado"
+    cancelado = "cancelado"
+
+
+class EstadoOrden(str, Enum):
+    solicitada = "solicitada"
+    confirmada = "confirmada"
+    enviada = "enviada"
+    recibida = "recibida"
+    rechazada = "rechazada"
+
+
+class ListaDias(TypeDecorator):
+    """Guarda list[Dia] como JSON y la lee de vuelta como enums (no como strings sueltos)."""
+
+    impl = JSON
+    cache_ok = True
+
+    def process_result_value(self, value, dialect):
+        return [Dia(d) for d in value or []]
+
+
+# --- Tablas --------------------------------------------------------------------------
+
+
+class Usuario(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    nombre: str
+    email: str = Field(unique=True)
+    rol: Rol
+    alcaldia: str
+
+
+class Comercio(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    dueno_id: int = Field(foreign_key="usuario.id", index=True)
+    nombre: str
+    categoria: Categoria
+    alcaldia: str
+    ubicacion: str
+    lat: float | None = None
+    lng: float | None = None
+    dias_operacion: list[Dia] = Field(default_factory=list, sa_column=Column(ListaDias))
+
+
+class Proveedor(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    usuario_id: int = Field(foreign_key="usuario.id", index=True)
+    nombre: str
+    tipo: TipoProveedor
+    zona: str
+
+
+class Producto(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    comercio_id: int = Field(foreign_key="comercio.id", index=True)
+    nombre: str
+    precio: float
+    stock: float
+    unidad: str  # kg, pieza, manojo, litro, caja...
+    stock_minimo: float = 5  # por debajo de esto hay alerta de stock bajo
+
+
+class OfertaProveedor(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    proveedor_id: int = Field(foreign_key="proveedor.id", index=True)
+    producto: str  # producto genérico, p. ej. "Jitomate saladet"
+    unidad: str
+    precio_mayoreo: float
+    cantidad_minima: float
+    disponible: bool = True
+
+
+class Pedido(SQLModel, table=True):
+    """Pedido B2C: cliente -> comercio."""
+
+    id: int | None = Field(default=None, primary_key=True)
+    cliente_id: int = Field(foreign_key="usuario.id", index=True)
+    comercio_id: int = Field(foreign_key="comercio.id", index=True)
+    estado: EstadoPedido = EstadoPedido.creado
+    creado_en: datetime = Field(default_factory=ahora)
+
+    items: list["PedidoItem"] = Relationship(back_populates="pedido")
+
+
+class PedidoItem(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    pedido_id: int = Field(foreign_key="pedido.id", index=True)
+    producto_id: int = Field(foreign_key="producto.id")
+    cantidad: float
+    precio_unitario: float  # precio al momento de pedir
+
+    pedido: Pedido = Relationship(back_populates="items")
+
+
+class OrdenAbasto(SQLModel, table=True):
+    """Orden B2B: comercio -> proveedor."""
+
+    id: int | None = Field(default=None, primary_key=True)
+    comercio_id: int = Field(foreign_key="comercio.id", index=True)
+    proveedor_id: int = Field(foreign_key="proveedor.id", index=True)
+    estado: EstadoOrden = EstadoOrden.solicitada
+    creado_en: datetime = Field(default_factory=ahora)
+
+    items: list["OrdenAbastoItem"] = Relationship(back_populates="orden")
+
+
+class OrdenAbastoItem(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    orden_id: int = Field(foreign_key="ordenabasto.id", index=True)
+    oferta_id: int = Field(foreign_key="ofertaproveedor.id")
+    # Producto del comercio que se reabastece al recibir la orden.
+    # Si es None, al recibir se busca/crea un producto con el nombre de la oferta.
+    producto_id: int | None = Field(default=None, foreign_key="producto.id")
+    cantidad: float
+    precio_unitario: float
+
+    orden: OrdenAbasto = Relationship(back_populates="items")
+
+
+# --- Esquemas de lectura compartidos (respuestas con items anidados) -----------------
+
+
+class PedidoItemLeer(SQLModel):
+    id: int
+    producto_id: int
+    cantidad: float
+    precio_unitario: float
+
+
+class PedidoLeer(SQLModel):
+    id: int
+    cliente_id: int
+    comercio_id: int
+    estado: EstadoPedido
+    creado_en: datetime
+    items: list[PedidoItemLeer]
+
+
+class OrdenAbastoItemLeer(SQLModel):
+    id: int
+    oferta_id: int
+    producto_id: int | None
+    cantidad: float
+    precio_unitario: float
+
+
+class OrdenAbastoLeer(SQLModel):
+    id: int
+    comercio_id: int
+    proveedor_id: int
+    estado: EstadoOrden
+    creado_en: datetime
+    items: list[OrdenAbastoItemLeer]

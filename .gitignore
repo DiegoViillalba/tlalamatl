@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+backend/tlalamatl.db
+
+# Node
+node_modules/
+frontend/dist/
+
+# Generados: se recrean con `make gen-api` (ignorados para que no choquen en los merges)
+frontend/openapi.json
+frontend/src/api/
+
+.DS_Store
